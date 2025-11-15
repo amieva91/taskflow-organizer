@@ -337,3 +337,15 @@
 - [x] Añadir metadatos del evento (título, descripción, ubicación, tipo)
 - [x] Respetar filtros activos (tipo y búsqueda) al exportar
 - [x] Generar nombre de archivo con fecha actual
+
+## Vista de Agenda Semanal
+- [x] Añadir opción de vista "Agenda Semanal" junto a Calendario y Lista
+- [x] Crear componente WeeklyAgenda con timeline horizontal
+- [x] Mostrar días de lunes a domingo con fechas
+- [x] Renderizar eventos en cada día ordenados por hora
+- [x] Implementar navegación anterior/siguiente semana
+- [x] Añadir botón "Hoy" para volver a semana actual
+- [x] Aplicar filtros de tipo y búsqueda a vista semanal
+- [x] Mostrar indicador visual de día actual (fondo azul)
+- [x] Hacer eventos clickeables para editar desde vista semanal
+- [x] Mostrar hora, ubicación e indicador de recurrencia en cada evento

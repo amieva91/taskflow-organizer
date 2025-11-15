@@ -63,8 +63,14 @@ export default function Calendar() {
     meeting: true,
     reminder: true,
   });
-  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [viewMode, setViewMode] = useState<"calendar" | "week" | "list">("calendar");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Ajustar al lunes
+    return new Date(today.setDate(diff));
+  });
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -604,6 +610,27 @@ export default function Calendar() {
                 Calendario
               </Button>
               <Button
+                variant={viewMode === "week" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("week")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                Semana
+              </Button>
+              <Button
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("list")}
@@ -826,22 +853,7 @@ export default function Calendar() {
             <CardContent className="p-6">
             {viewMode === "calendar" ? (
               // Vista de Calendario
-              !isGoogleConnected ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                  <CalendarIcon className="h-16 w-16 text-gray-300" />
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Conecta tu cuenta de Google
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      Para sincronizar eventos de Google Calendar, conecta tu cuenta en Configuración
-                    </p>
-                    <Button onClick={() => window.location.href = "/settings"}>
-                      Ir a Configuración
-                    </Button>
-                  </div>
-                </div>
-              ) : isLoading ? (
+              isLoading ? (
                 <div className="flex justify-center py-20">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
@@ -881,6 +893,196 @@ export default function Calendar() {
                   allDaySlot={true}
                   nowIndicator={true}
                 />
+              )
+            ) : viewMode === "week" ? (
+              // Vista de Agenda Semanal
+              isLoading ? (
+                <div className="flex justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Navegación de semana */}
+                  <div className="flex justify-between items-center px-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newDate = new Date(currentWeekStart);
+                        newDate.setDate(newDate.getDate() - 7);
+                        setCurrentWeekStart(newDate);
+                      }}
+                    >
+                      ← Semana Anterior
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const today = new Date();
+                          const day = today.getDay();
+                          const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                          setCurrentWeekStart(new Date(today.setDate(diff)));
+                        }}
+                      >
+                        Hoy
+                      </Button>
+                      <span className="text-sm font-medium">
+                        {currentWeekStart.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {' - '}
+                        {(() => {
+                          const weekEnd = new Date(currentWeekStart);
+                          weekEnd.setDate(weekEnd.getDate() + 6);
+                          return weekEnd.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                        })()}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newDate = new Date(currentWeekStart);
+                        newDate.setDate(newDate.getDate() + 7);
+                        setCurrentWeekStart(newDate);
+                      }}
+                    >
+                      Semana Siguiente →
+                    </Button>
+                  </div>
+
+                  {/* Grid de días de la semana */}
+                  <div className="grid grid-cols-7 gap-2">
+                    {[0, 1, 2, 3, 4, 5, 6].map((dayOffset) => {
+                      const currentDay = new Date(currentWeekStart);
+                      currentDay.setDate(currentDay.getDate() + dayOffset);
+                      const dayStart = new Date(currentDay);
+                      dayStart.setHours(0, 0, 0, 0);
+                      const dayEnd = new Date(currentDay);
+                      dayEnd.setHours(23, 59, 59, 999);
+                      
+                      const isToday = new Date().toDateString() === currentDay.toDateString();
+                      
+                      // Filtrar eventos del día
+                      const dayEvents = (localEvents || []).filter((event: any) => {
+                        const eventDate = new Date(event.startDate);
+                        return eventDate >= dayStart && eventDate <= dayEnd &&
+                          (!event.type || eventTypeFilters[event.type as keyof typeof eventTypeFilters]) &&
+                          (!searchQuery || 
+                            event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            event.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+                      }).sort((a: any, b: any) => 
+                        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+                      );
+
+                      return (
+                        <div
+                          key={dayOffset}
+                          className={`border rounded-lg p-3 min-h-[200px] ${
+                            isToday ? 'bg-blue-50 border-blue-300' : 'bg-white'
+                          }`}
+                        >
+                          <div className="text-center mb-3">
+                            <div className={`text-xs font-medium uppercase ${
+                              isToday ? 'text-blue-600' : 'text-gray-500'
+                            }`}>
+                              {currentDay.toLocaleDateString('es-ES', { weekday: 'short' })}
+                            </div>
+                            <div className={`text-2xl font-bold ${
+                              isToday ? 'text-blue-600' : 'text-gray-900'
+                            }`}>
+                              {currentDay.getDate()}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {currentDay.toLocaleDateString('es-ES', { month: 'short' })}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {dayEvents.length > 0 ? (
+                              dayEvents.map((event: any) => (
+                                <div
+                                  key={event.id}
+                                  className="text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                  style={{
+                                    backgroundColor: event.type ? EVENT_TYPE_COLORS[event.type as keyof typeof EVENT_TYPE_COLORS] : '#3b82f6',
+                                    color: 'white'
+                                  }}
+                                  onClick={() => {
+                                    setFormData({
+                                      title: event.title || '',
+                                      description: event.description || '',
+                                      start: new Date(event.startDate).toISOString().slice(0, 16),
+                                      end: new Date(event.endDate).toISOString().slice(0, 16),
+                                      allDay: event.allDay || false,
+                                      type: event.type || 'personal',
+                                      location: event.location || '',
+                                      isRecurring: event.isRecurring || false,
+                                      recurrencePattern: event.recurrencePattern || 'daily',
+                                      recurrenceEndDate: event.recurrenceEndDate ? new Date(event.recurrenceEndDate).toISOString().slice(0, 10) : '',
+                                    });
+                                    setSelectedEvent(event);
+                                    setIsEventDialogOpen(true);
+                                  }}
+                                >
+                                  <div className="font-semibold truncate">
+                                    {event.isRecurring && '🔁 '}{event.title}
+                                  </div>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3 w-3"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                      />
+                                    </svg>
+                                    <span>
+                                      {new Date(event.startDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  {event.location && (
+                                    <div className="flex items-center gap-1 mt-1 truncate">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                        />
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                        />
+                                      </svg>
+                                      <span className="truncate">{event.location}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-gray-400 text-center py-4">Sin eventos</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )
             ) : (
               // Vista de Lista
