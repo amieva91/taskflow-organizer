@@ -71,6 +71,8 @@ export default function Calendar() {
     const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Ajustar al lunes
     return new Date(today.setDate(diff));
   });
+  const [draggedEvent, setDraggedEvent] = useState<any>(null);
+  const [dragOverDay, setDragOverDay] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -978,9 +980,47 @@ export default function Calendar() {
                       return (
                         <div
                           key={dayOffset}
-                          className={`border rounded-lg p-3 min-h-[200px] ${
+                          className={`border rounded-lg p-3 min-h-[200px] transition-colors ${
                             isToday ? 'bg-blue-50 border-blue-300' : 'bg-white'
+                          } ${
+                            dragOverDay === currentDay.toISOString() ? 'border-green-400 bg-green-50' : ''
                           }`}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            setDragOverDay(currentDay.toISOString());
+                          }}
+                          onDragLeave={() => {
+                            setDragOverDay(null);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setDragOverDay(null);
+                            if (draggedEvent) {
+                              // Calcular nueva fecha manteniendo la hora original
+                              const originalStart = new Date(draggedEvent.startDate);
+                              const originalEnd = new Date(draggedEvent.endDate);
+                              const duration = originalEnd.getTime() - originalStart.getTime();
+                              
+                              const newStart = new Date(currentDay);
+                              newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+                              
+                              const newEnd = new Date(newStart.getTime() + duration);
+                              
+                              // Actualizar evento
+                              updateEventMutation.mutate({
+                                eventId: draggedEvent.id,
+                                title: draggedEvent.title,
+                                description: draggedEvent.description,
+                                startDate: newStart.toISOString(),
+                                endDate: newEnd.toISOString(),
+                                allDay: draggedEvent.allDay,
+                                type: draggedEvent.type,
+                                location: draggedEvent.location,
+                              });
+                              
+                              setDraggedEvent(null);
+                            }
+                          }}
                         >
                           <div className="text-center mb-3">
                             <div className={`text-xs font-medium uppercase ${
@@ -1003,7 +1043,16 @@ export default function Calendar() {
                               dayEvents.map((event: any) => (
                                 <div
                                   key={event.id}
-                                  className="text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                  draggable
+                                  className="text-xs p-2 rounded cursor-move hover:opacity-80 transition-opacity"
+                                  onDragStart={(e) => {
+                                    setDraggedEvent(event);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                  }}
+                                  onDragEnd={() => {
+                                    setDraggedEvent(null);
+                                    setDragOverDay(null);
+                                  }}
                                   style={{
                                     backgroundColor: event.type ? EVENT_TYPE_COLORS[event.type as keyof typeof EVENT_TYPE_COLORS] : '#3b82f6',
                                     color: 'white'

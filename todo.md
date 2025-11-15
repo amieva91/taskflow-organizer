@@ -349,3 +349,13 @@
 - [x] Mostrar indicador visual de día actual (fondo azul)
 - [x] Hacer eventos clickeables para editar desde vista semanal
 - [x] Mostrar hora, ubicación e indicador de recurrencia en cada evento
+
+## Drag-and-Drop en Vista Semanal
+- [x] Hacer eventos arrastrables con atributo draggable
+- [x] Implementar handlers onDragStart, onDragOver, onDrop
+- [x] Calcular nueva fecha al soltar evento en otro día
+- [x] Actualizar evento en base de datos con nueva fecha
+- [x] Añadir indicadores visuales durante el arrastre (cursor move, highlight verde)
+- [x] Mantener hora original del evento al cambiar de día
+- [x] Calcular duración del evento y aplicarla a nueva fecha
+- [x] Limpiar estado de drag al finalizar (onDragEnd)
