@@ -211,3 +211,13 @@
 - [x] Tabla resumen con métricas clave
 - [x] Funcionalidad de exportar reporte a PDF
 - [x] Filtros por rango de fechas
+
+## Configuración PWA Completa
+- [x] Crear manifest.json con metadatos de la app
+- [x] Generar iconos en múltiples resoluciones (192x192, 512x512)
+- [x] Implementar service worker para caché offline
+- [x] Configurar estrategias de caché (network-first, cache-first)
+- [x] Añadir soporte para instalación en dispositivos
+- [x] Configurar notificaciones push
+- [x] Añadir splash screens para iOS
+- [x] Registrar service worker en el cliente
