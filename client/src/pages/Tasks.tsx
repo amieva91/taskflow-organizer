@@ -130,6 +130,7 @@ export default function Tasks() {
     type: "personal" | "professional" | "meeting" | "event" | "class" | "training";
     projectId: number | undefined;
     assignedContactIds: number[];
+    sendNotifications: boolean;
   }>({
     title: "",
     description: "",
@@ -140,6 +141,7 @@ export default function Tasks() {
     type: "personal",
     projectId: undefined,
     assignedContactIds: [],
+    sendNotifications: true,
   });
 
   const { data: tasks, isLoading } = trpc.tasks.list.useQuery();
@@ -192,6 +194,7 @@ export default function Tasks() {
       type: "personal",
       projectId: undefined,
       assignedContactIds: [],
+      sendNotifications: true,
     });
     setSelectedTask(null);
   };
@@ -214,6 +217,7 @@ export default function Tasks() {
       type: formData.type,
       projectId: formData.projectId,
       assignedContactIds: formData.assignedContactIds.length > 0 ? formData.assignedContactIds : undefined,
+      sendNotifications: formData.sendNotifications && formData.assignedContactIds.length > 0,
     };
 
     if (selectedTask) {
@@ -238,6 +242,7 @@ export default function Tasks() {
       type: task.type,
       projectId: task.projectId || undefined,
       assignedContactIds: task.assignedContacts?.map(c => c.id) || [],
+      sendNotifications: false,
     });
     setIsTaskDialogOpen(true);
   };
@@ -644,6 +649,23 @@ export default function Tasks() {
                     Selecciona uno o varios contactos para asignar a esta tarea
                   </p>
                 </div>
+
+                {!selectedTask && formData.assignedContactIds.length > 0 && (
+                  <div className="flex items-center space-x-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <input
+                      type="checkbox"
+                      id="sendNotifications"
+                      checked={formData.sendNotifications}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sendNotifications: e.target.checked })
+                      }
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <Label htmlFor="sendNotifications" className="text-sm font-normal cursor-pointer">
+                      Enviar notificaciones por email a los contactos asignados
+                    </Label>
+                  </div>
+                )}
               </div>
 
               <DialogFooter className="gap-2">

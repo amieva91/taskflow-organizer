@@ -163,3 +163,11 @@
 - [x] Modificar modal de tareas para permitir selección múltiple de contactos
 - [x] Mostrar contactos asignados en las tarjetas de tareas
 - [x] Actualizar vista Kanban con avatares de contactos asignados
+
+## Sistema de Notificaciones por Email
+- [x] Crear función para enviar notificaciones de asignación de tarea
+- [x] Implementar plantilla HTML para emails de notificación
+- [x] Añadir opción en modal de tareas para enviar notificaciones
+- [x] Enviar notificaciones automáticas al asignar contactos
+- [x] Filtrar contactos ficticios (no enviar emails a ficticios)
+- [x] Manejar errores de envío de email gracefully

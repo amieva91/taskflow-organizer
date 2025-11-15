@@ -8,6 +8,7 @@ import * as db from "./db";
 import { getAuthUrl, getTokensFromCode } from "./googleAuth";
 import * as googleCalendar from "./googleCalendar";
 import * as googleGmail from "./googleGmail";
+import * as emailNotifications from "./emailNotifications";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -323,9 +324,10 @@ export const appRouter = router({
         color: z.string().optional(),
         googleCalendarEventId: z.string().optional(),
         assignedContactIds: z.array(z.number()).optional(),
+        sendNotifications: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { assignedContactIds, ...taskData } = input;
+        const { assignedContactIds, sendNotifications, ...taskData } = input;
         const result = await db.createTask({
           ...taskData,
           userId: ctx.user.id,
@@ -344,6 +346,20 @@ export const appRouter = router({
               })
             )
           );
+          
+          // Enviar notificaciones si está habilitado
+          if (sendNotifications) {
+            try {
+              await emailNotifications.sendTaskAssignmentNotification(
+                ctx.user.id,
+                taskId,
+                assignedContactIds
+              );
+            } catch (error) {
+              console.error('Error sending notifications:', error);
+              // No fallar la creación de la tarea si falla el envío de notificaciones
+            }
+          }
         }
         
         return result;
