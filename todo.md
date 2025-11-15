@@ -155,4 +155,11 @@
 - [x] Gestión de departamentos
 - [x] Asignación de contactos a departamentos
 - [x] Vista de recursos por departamento
-- [ ] Integración con asignación de tareas
+- [x] Integración con asignación de tareas
+
+## Integración de Asignación de Contactos a Tareas
+- [x] Añadir tabla de relación task_assignments en el esquema
+- [x] Actualizar routers para incluir asignación de contactos
+- [x] Modificar modal de tareas para permitir selección múltiple de contactos
+- [x] Mostrar contactos asignados en las tarjetas de tareas
+- [x] Actualizar vista Kanban con avatares de contactos asignados

@@ -292,7 +292,8 @@ export async function createTask(task: InsertTask) {
   if (!db) return null;
   
   const result = await db.insert(tasks).values(task);
-  return result;
+  const insertId = (result as any)[0]?.insertId || null;
+  return { insertId };
 }
 
 export async function getTasksByUserId(userId: number) {
@@ -531,4 +532,39 @@ export async function deleteNotification(id: number) {
   if (!db) return;
   
   await db.delete(notifications).where(eq(notifications.id, id));
+}
+
+// ============= HELPER FUNCTIONS =============
+
+export async function getTasksWithAssignments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const userTasks = await getTasksByUserId(userId);
+  
+  const tasksWithAssignments = await Promise.all(
+    userTasks.map(async (task) => {
+      const assignments = await getAssignmentsByTaskId(task.id);
+      const assignedContacts = await Promise.all(
+        assignments.map(async (assignment) => {
+          const contact = await getContactById(assignment.contactId);
+          return contact;
+        })
+      );
+      
+      return {
+        ...task,
+        assignedContacts: assignedContacts.filter(c => c !== null),
+      };
+    })
+  );
+  
+  return tasksWithAssignments;
+}
+
+export async function deleteTaskAssignmentsByTaskId(taskId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(taskAssignments).where(eq(taskAssignments.taskId, taskId));
 }

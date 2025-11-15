@@ -280,7 +280,7 @@ export const appRouter = router({
 
   tasks: router({
     list: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getTasksByUserId(ctx.user.id);
+      return await db.getTasksWithAssignments(ctx.user.id);
     }),
 
     byId: protectedProcedure
@@ -322,14 +322,30 @@ export const appRouter = router({
         type: z.enum(["personal", "professional", "meeting", "event", "class", "training"]).optional(),
         color: z.string().optional(),
         googleCalendarEventId: z.string().optional(),
+        assignedContactIds: z.array(z.number()).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        const { assignedContactIds, ...taskData } = input;
         const result = await db.createTask({
-          ...input,
+          ...taskData,
           userId: ctx.user.id,
           startDate: input.startDate ? new Date(input.startDate) : undefined,
           dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
         });
+        
+        // Crear asignaciones de contactos
+        if (result && result.insertId && assignedContactIds && assignedContactIds.length > 0) {
+          const taskId = Number(result.insertId);
+          await Promise.all(
+            assignedContactIds.map(contactId =>
+              db.createTaskAssignment({
+                taskId,
+                contactId,
+              })
+            )
+          );
+        }
+        
         return result;
       }),
 
@@ -346,15 +362,35 @@ export const appRouter = router({
         estimatedHours: z.number().optional(),
         actualHours: z.number().optional(),
         color: z.string().optional(),
+        assignedContactIds: z.array(z.number()).optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, assignedContactIds, ...data } = input;
         await db.updateTask(id, {
           ...data,
           startDate: data.startDate ? new Date(data.startDate) : undefined,
           dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
           completedDate: data.completedDate ? new Date(data.completedDate) : undefined,
         });
+        
+        // Actualizar asignaciones de contactos
+        if (assignedContactIds !== undefined) {
+          // Eliminar asignaciones existentes
+          await db.deleteTaskAssignmentsByTaskId(id);
+          
+          // Crear nuevas asignaciones
+          if (assignedContactIds.length > 0) {
+            await Promise.all(
+              assignedContactIds.map(contactId =>
+                db.createTaskAssignment({
+                  taskId: id,
+                  contactId,
+                })
+              )
+            );
+          }
+        }
+        
         return { success: true };
       }),
 
