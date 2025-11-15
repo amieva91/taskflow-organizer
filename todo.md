@@ -137,3 +137,12 @@
 - [x] Filtros por prioridad, proyecto y tipo
 - [x] Búsqueda de tareas
 - [ ] Asignación de tareas a contactos
+
+## Página de Proyectos con Gantt
+- [x] Implementar lista de proyectos con estadísticas
+- [x] Modal para crear y editar proyectos
+- [x] Vista de diagrama de Gantt con tareas del proyecto
+- [x] Visualización de fases del proyecto
+- [ ] Asignación de recursos a tareas
+- [x] Seguimiento de progreso y porcentaje completado
+- [ ] Gestión de dependencias entre tareas
