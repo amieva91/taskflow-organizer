@@ -328,3 +328,12 @@
 - [x] Implementar visualización de eventos recurrentes en calendario (expandRecurringEvent)
 - [x] Añadir indicador visual para eventos recurrentes (emoji 🔁)
 - [x] Actualizar getCalendarEvents para expandir eventos recurrentes automáticamente
+
+## Exportación a iCalendar (.ics)
+- [x] Crear función para generar formato iCalendar (.ics) (módulo client/src/lib/icalendar.ts)
+- [x] Añadir botón "Exportar a .ics" en vista de lista del calendario
+- [x] Implementar descarga de archivo .ics con eventos filtrados
+- [x] Incluir eventos recurrentes en exportación (con RRULE)
+- [x] Añadir metadatos del evento (título, descripción, ubicación, tipo)
+- [x] Respetar filtros activos (tipo y búsqueda) al exportar
+- [x] Generar nombre de archivo con fecha actual

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
 import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search, Bell, BellOff } from "lucide-react";
 import esLocale from "@fullcalendar/core/locales/es";
+import { downloadICalendar } from "@/lib/icalendar";
 
 // Colores predefinidos para tipos de evento
 const EVENT_TYPE_COLORS = {
@@ -543,6 +544,44 @@ export default function Calendar() {
     toast.success("Calendario actualizado");
   };
 
+  const handleExportToICS = () => {
+    if (!localEvents || localEvents.length === 0) {
+      toast.error("No hay eventos para exportar");
+      return;
+    }
+
+    // Filtrar eventos según filtros activos
+    const eventsToExport = localEvents.filter((event: any) => {
+      // Filtrar por tipo
+      const typeMatch = !event.type || eventTypeFilters[event.type as keyof typeof eventTypeFilters];
+      
+      // Filtrar por búsqueda
+      const searchMatch = !searchQuery || 
+        event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      return typeMatch && searchMatch;
+    });
+
+    if (eventsToExport.length === 0) {
+      toast.error("No hay eventos que coincidan con los filtros actuales");
+      return;
+    }
+
+    try {
+      // Generar nombre de archivo con fecha actual
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const filename = `taskflow-eventos-${dateStr}.ics`;
+      
+      downloadICalendar(eventsToExport, filename);
+      toast.success(`${eventsToExport.length} eventos exportados a ${filename}`);
+    } catch (error) {
+      console.error('Error al exportar eventos:', error);
+      toast.error("Error al exportar eventos");
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -850,7 +889,36 @@ export default function Calendar() {
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="space-y-4">
+                  {/* Barra de acciones de la lista */}
+                  <div className="flex justify-between items-center px-4">
+                    <p className="text-sm text-gray-600">
+                      {calendarEvents?.length || 0} eventos encontrados
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportToICS}
+                      disabled={!calendarEvents || calendarEvents.length === 0}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Exportar a .ics
+                    </Button>
+                  </div>
+                  <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                       <tr>
@@ -958,6 +1026,7 @@ export default function Calendar() {
                       )}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )
             )}
