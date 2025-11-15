@@ -299,3 +299,12 @@
 - [x] Implementar filtrado por título en tiempo real
 - [x] Implementar filtrado por descripción en tiempo real
 - [x] Aplicar búsqueda tanto en vista calendario como en vista lista
+
+## Notificaciones Push de Recordatorios
+- [x] Solicitar permisos de notificaciones al usuario
+- [x] Crear hook useEventNotifications para gestionar notificaciones
+- [x] Implementar verificación periódica de eventos próximos (cada minuto)
+- [x] Enviar notificación 15 minutos antes de eventos tipo Reunión o Recordatorio
+- [x] Mostrar título, hora y ubicación del evento en la notificación
+- [x] Evitar notificaciones duplicadas para el mismo evento
+- [x] Añadir banner informativo para activar notificaciones

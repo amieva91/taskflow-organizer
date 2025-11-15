@@ -14,7 +14,8 @@ import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search } from "lucide-react";
+import { useEventNotifications } from "@/hooks/useEventNotifications";
+import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search, Bell, BellOff } from "lucide-react";
 import esLocale from "@fullcalendar/core/locales/es";
 
 // Colores predefinidos para tipos de evento
@@ -85,6 +86,13 @@ export default function Calendar() {
   }, {
     enabled: isGoogleConnected,
     retry: false,
+  });
+
+  // Activar notificaciones para eventos locales
+  const { permission, requestPermission, isSupported } = useEventNotifications({
+    events: localEvents || [],
+    enabled: true,
+    notificationMinutes: 15,
   });
 
   // Combinar eventos locales y de Google
@@ -579,6 +587,41 @@ export default function Calendar() {
             </Button>
           </div>
         </div>
+
+        {/* Banner de notificaciones */}
+        {isSupported && permission !== 'granted' && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <BellOff className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Notificaciones desactivadas
+                    </p>
+                    <p className="text-xs text-blue-700 mt-0.5">
+                      Activa las notificaciones para recibir recordatorios 15 minutos antes de tus reuniones
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    const granted = await requestPermission();
+                    if (granted) {
+                      toast.success('Notificaciones activadas correctamente');
+                    } else {
+                      toast.error('No se pudieron activar las notificaciones');
+                    }
+                  }}
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  Activar Notificaciones
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filtros de tipo de evento */}
         <Card>
