@@ -230,7 +230,7 @@ export default function Calendar() {
         title: `📋 ${task.title}`,
         start: task.startDate || task.dueDate,
         end: task.dueDate,
-        allDay: true,
+        allDay: false, // Permitir edición temporal
         backgroundColor: task.priority === "urgent" ? "#ef4444" : 
                         task.priority === "high" ? "#f97316" : 
                         task.priority === "medium" ? "#eab308" : "#6b7280",
@@ -289,11 +289,24 @@ export default function Calendar() {
     const event = dropInfo.event;
     
     if (event.extendedProps.source === "task") {
-      toast.error("No puedes mover eventos de tareas desde aquí");
-      dropInfo.revert();
+      // Permitir mover tareas
+      const taskId = event.id.replace('task-', '');
+      const task = tasks?.find(t => t.id === Number(taskId));
+      if (!task) {
+        dropInfo.revert();
+        return;
+      }
+
+      // Actualizar tarea con nuevas fechas
+      updateTaskMutation.mutate({
+        id: task.id,
+        startDate: event.startStr,
+        dueDate: event.endStr,
+      });
       return;
     }
 
+    // Para eventos de Google Calendar
     updateEventMutation.mutate({
       eventId: event.id,
       start: {
@@ -311,11 +324,24 @@ export default function Calendar() {
     const event = resizeInfo.event;
     
     if (event.extendedProps.source === "task") {
-      toast.error("No puedes redimensionar eventos de tareas desde aquí");
-      resizeInfo.revert();
+      // Permitir redimensionar tareas
+      const taskId = event.id.replace('task-', '');
+      const task = tasks?.find(t => t.id === Number(taskId));
+      if (!task) {
+        resizeInfo.revert();
+        return;
+      }
+
+      // Actualizar tarea con nuevas fechas
+      updateTaskMutation.mutate({
+        id: task.id,
+        startDate: event.startStr,
+        dueDate: event.endStr,
+      });
       return;
     }
 
+    // Para eventos de Google Calendar
     updateEventMutation.mutate({
       eventId: event.id,
       start: {

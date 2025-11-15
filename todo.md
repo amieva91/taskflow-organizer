@@ -195,3 +195,9 @@
 - [x] Actualizar tarea con fechas del hueco seleccionado
 - [x] Feedback visual durante el arrastre
 - [x] Mostrar confirmación al agendar tarea
+
+## Edición de Duración de Tareas en Calendario
+- [x] Permitir redimensionar eventos de tareas en el calendario
+- [x] Actualizar startDate y dueDate al redimensionar
+- [x] Mostrar feedback visual durante el resize
+- [x] Confirmar cambios con toast
