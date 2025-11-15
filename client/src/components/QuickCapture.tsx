@@ -178,8 +178,10 @@ export function QuickCapture({ isOpen, onClose }: QuickCaptureProps) {
 
   // Actualizar notas locales cuando cambien las del servidor
   useEffect(() => {
-    setLocalNotes(notes);
-  }, [notes]);
+    if (JSON.stringify(notes) !== JSON.stringify(localNotes)) {
+      setLocalNotes(notes);
+    }
+  }, [notes]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mutations
   const createMutation = trpc.quickNotes.create.useMutation({
