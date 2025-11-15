@@ -342,6 +342,11 @@ export const calendarEvents = mysqlTable("calendarEvents", {
   googleEventId: varchar("googleEventId", { length: 255 }), // ID del evento en Google Calendar si está sincronizado
   isSynced: boolean("isSynced").default(false).notNull(), // Si está sincronizado con Google
   lastSyncedAt: timestamp("lastSyncedAt"), // Última vez que se sincronizó
+  // Recurrencia
+  isRecurring: boolean("isRecurring").default(false).notNull(), // Si es un evento recurrente
+  recurrencePattern: mysqlEnum("recurrencePattern", ["none", "daily", "weekly", "monthly", "yearly"]).default("none").notNull(),
+  recurrenceEndDate: datetime("recurrenceEndDate"), // Fecha de finalización de la recurrencia (opcional)
+  recurrenceParentId: int("recurrenceParentId"), // ID del evento padre si es una instancia de evento recurrente
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

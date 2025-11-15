@@ -43,6 +43,9 @@ interface EventFormData {
   colorId?: string;
   type?: "personal" | "professional" | "meeting" | "reminder";
   location?: string;
+  isRecurring?: boolean;
+  recurrencePattern?: "none" | "daily" | "weekly" | "monthly" | "yearly";
+  recurrenceEndDate?: string;
 }
 
 export default function Calendar() {
@@ -67,6 +70,9 @@ export default function Calendar() {
     start: "",
     end: "",
     allDay: false,
+    isRecurring: false,
+    recurrencePattern: "none",
+    recurrenceEndDate: "",
   });
 
   const { data: user } = trpc.auth.me.useQuery();
@@ -289,7 +295,7 @@ export default function Calendar() {
       })
       .map((event: any) => ({
         id: String(event.id),
-        title: event.title || "Sin título",
+        title: (event.isRecurring ? "🔁 " : "") + (event.title || "Sin título"),
         start: event.startDate,
         end: event.endDate,
         allDay: event.allDay,
@@ -299,6 +305,10 @@ export default function Calendar() {
           source: "local",
           location: event.location,
           type: event.type,
+          isRecurring: event.isRecurring,
+          recurrencePattern: event.recurrencePattern,
+          recurrenceEndDate: event.recurrenceEndDate,
+          recurrenceParentId: event.recurrenceParentId,
         },
       })),
     // Eventos de Google Calendar (si está conectado)
@@ -359,7 +369,7 @@ export default function Calendar() {
 
     setFormData({
       id: event.id,
-      title: event.title,
+      title: event.title.replace(/^🔁 /, ""), // Quitar emoji de recurrencia del título
       description: event.extendedProps.description || "",
       start: event.startStr,
       end: event.endStr,
@@ -367,6 +377,9 @@ export default function Calendar() {
       type: event.extendedProps.type,
       location: event.extendedProps.location,
       colorId: event.backgroundColor,
+      isRecurring: event.extendedProps.isRecurring || false,
+      recurrencePattern: event.extendedProps.recurrencePattern || "none",
+      recurrenceEndDate: event.extendedProps.recurrenceEndDate || "",
     });
     setSelectedEvent({
       id: event.id,
@@ -490,6 +503,9 @@ export default function Calendar() {
       color: formData.colorId,
       type: formData.type || "personal",
       location: formData.location,
+      isRecurring: formData.isRecurring || false,
+      recurrencePattern: formData.isRecurring ? (formData.recurrencePattern || "none") : "none",
+      recurrenceEndDate: formData.isRecurring && formData.recurrenceEndDate ? formData.recurrenceEndDate : null,
     };
 
     if (selectedEvent?.id) {
@@ -1062,6 +1078,67 @@ export default function Calendar() {
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="Lugar del evento..."
                   />
+                </div>
+
+                {/* Opciones de recurrencia */}
+                <div className="space-y-4 border-t pt-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="isRecurring"
+                      checked={formData.isRecurring || false}
+                      onChange={(e) => {
+                        const isRecurring = e.target.checked;
+                        setFormData({ 
+                          ...formData, 
+                          isRecurring,
+                          recurrencePattern: isRecurring ? "daily" : "none"
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="isRecurring" className="text-sm font-medium">
+                      Evento recurrente
+                    </Label>
+                  </div>
+
+                  {formData.isRecurring && (
+                    <div className="space-y-3 pl-6">
+                      <div className="grid gap-2">
+                        <Label htmlFor="recurrencePattern">Repetir</Label>
+                        <Select
+                          value={formData.recurrencePattern || "daily"}
+                          onValueChange={(value) => 
+                            setFormData({ ...formData, recurrencePattern: value as any })
+                          }
+                        >
+                          <SelectTrigger id="recurrencePattern">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Diariamente</SelectItem>
+                            <SelectItem value="weekly">Semanalmente</SelectItem>
+                            <SelectItem value="monthly">Mensualmente</SelectItem>
+                            <SelectItem value="yearly">Anualmente</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="recurrenceEndDate">Finaliza el (opcional)</Label>
+                        <Input
+                          id="recurrenceEndDate"
+                          type="date"
+                          value={formData.recurrenceEndDate || ""}
+                          onChange={(e) => setFormData({ ...formData, recurrenceEndDate: e.target.value })}
+                          min={formData.start?.split('T')[0]}
+                        />
+                        <p className="text-xs text-gray-500">
+                          Deja vacío para repetir indefinidamente
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

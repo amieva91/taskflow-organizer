@@ -319,3 +319,12 @@
 - [x] Actualizar useEventNotifications para leer preferencias del usuario
 - [x] Añadir enlace a configuración de notificaciones en página Settings
 - [x] Integrar configuración con Calendar.tsx
+
+## Eventos Recurrentes
+- [x] Añadir campos de recurrencia a tabla calendarEvents (isRecurring, recurrencePattern, recurrenceEndDate, recurrenceParentId)
+- [x] Crear lógica backend para generar instancias de eventos recurrentes (módulo recurrence.ts)
+- [x] Añadir opciones de recurrencia en formulario de eventos (diaria/semanal/mensual/anual)
+- [x] Añadir selector de fecha de finalización de recurrencia (opcional)
+- [x] Implementar visualización de eventos recurrentes en calendario (expandRecurringEvent)
+- [x] Añadir indicador visual para eventos recurrentes (emoji 🔁)
+- [x] Actualizar getCalendarEvents para expandir eventos recurrentes automáticamente
