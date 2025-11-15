@@ -106,3 +106,13 @@
 - [ ] Optimización de carga
 - [ ] Pruebas en dispositivos móviles
 - [ ] Pruebas de funcionalidad PWA
+
+## Dashboard Principal
+- [x] Implementar layout del dashboard con navegación lateral
+- [x] Widget de resumen de estadísticas diarias
+- [x] Widget de calendario compacto con eventos del día
+- [x] Widget de tareas pendientes con prioridades
+- [x] Widget de próximos eventos
+- [x] Integración con Google Calendar en dashboard
+- [ ] Gráficos de productividad
+- [ ] Acceso rápido a crear tarea/evento
