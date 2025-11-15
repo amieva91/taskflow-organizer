@@ -270,7 +270,7 @@
 - [x] Corregir error OAuth de Google Calendar (redirect_uri faltante)
 - [x] Crear tabla de eventos locales en la base de datos
 - [x] Implementar CRUD de eventos locales sin dependencia de Google
-- [ ] Modificar página de Calendario para usar eventos locales por defecto
+- [x] Modificar página de Calendario para usar eventos locales por defecto
 - [ ] Añadir botón de "Sincronizar con Google Calendar" opcional
 - [ ] Implementar sincronización bidireccional manual (importar eventos de Google)
 - [ ] Permitir exportar eventos locales a Google Calendar

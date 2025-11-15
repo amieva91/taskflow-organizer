@@ -46,7 +46,14 @@ export default function Calendar() {
   const { data: user } = trpc.auth.me.useQuery();
   const isGoogleConnected = !!user?.googleAccessToken;
 
-  const { data: calendarEvents, isLoading, error } = trpc.calendar.list.useQuery({
+  // Usar eventos locales por defecto
+  const { data: localEvents, isLoading, error } = trpc.calendarEvents.list.useQuery({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+
+  // Eventos de Google Calendar (opcional, solo si está conectado)
+  const { data: googleEvents } = trpc.calendar.list.useQuery({
     timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     timeMax: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
     maxResults: 500,
@@ -55,12 +62,15 @@ export default function Calendar() {
     retry: false,
   });
 
+  // Combinar eventos locales y de Google
+  const calendarEvents = localEvents || [];
+
   const { data: tasks } = trpc.tasks.list.useQuery();
 
-  const createEventMutation = trpc.calendar.create.useMutation({
+  const createEventMutation = trpc.calendarEvents.create.useMutation({
     onSuccess: () => {
       toast.success("Evento creado exitosamente");
-      utils.calendar.list.invalidate();
+      utils.calendarEvents.list.invalidate();
       setIsEventDialogOpen(false);
       resetForm();
     },
@@ -69,10 +79,10 @@ export default function Calendar() {
     },
   });
 
-  const updateEventMutation = trpc.calendar.update.useMutation({
+  const updateEventMutation = trpc.calendarEvents.update.useMutation({
     onSuccess: () => {
       toast.success("Evento actualizado exitosamente");
-      utils.calendar.list.invalidate();
+      utils.calendarEvents.list.invalidate();
       setIsEventDialogOpen(false);
       resetForm();
     },
@@ -81,10 +91,10 @@ export default function Calendar() {
     },
   });
 
-  const deleteEventMutation = trpc.calendar.delete.useMutation({
+  const deleteEventMutation = trpc.calendarEvents.delete.useMutation({
     onSuccess: () => {
       toast.success("Evento eliminado exitosamente");
-      utils.calendar.list.invalidate();
+      utils.calendarEvents.list.invalidate();
       setIsEventDialogOpen(false);
       resetForm();
     },
@@ -211,13 +221,29 @@ export default function Calendar() {
   const availableSlots = calculateAvailableSlots();
 
   const events = [
+    // Eventos locales
     ...(calendarEvents || []).map((event: any) => ({
-      id: event.id,
+      id: String(event.id),
+      title: event.title || "Sin título",
+      start: event.startDate,
+      end: event.endDate,
+      allDay: event.allDay,
+      backgroundColor: event.color || "#3b82f6",
+      extendedProps: {
+        description: event.description,
+        source: "local",
+        location: event.location,
+        type: event.type,
+      },
+    })),
+    // Eventos de Google Calendar (si está conectado)
+    ...(googleEvents || []).map((event: any) => ({
+      id: `google-${event.id}`,
       title: event.summary || "Sin título",
       start: event.start?.dateTime || event.start?.date,
       end: event.end?.dateTime || event.end?.date,
       allDay: !event.start?.dateTime,
-      backgroundColor: event.colorId ? `#${event.colorId}` : "#3b82f6",
+      backgroundColor: event.colorId ? `#${event.colorId}` : "#8b5cf6",
       extendedProps: {
         description: event.description,
         source: "google",
@@ -306,18 +332,17 @@ export default function Calendar() {
       return;
     }
 
-    // Para eventos de Google Calendar
-    updateEventMutation.mutate({
-      eventId: event.id,
-      start: {
-        dateTime: event.allDay ? undefined : event.startStr,
-        date: event.allDay ? event.startStr.split("T")[0] : undefined,
-      },
-      end: {
-        dateTime: event.allDay ? undefined : event.endStr,
-        date: event.allDay ? event.endStr.split("T")[0] : undefined,
-      },
-    });
+    // Para eventos locales
+    if (event.extendedProps.source === "local") {
+      updateEventMutation.mutate({
+        eventId: Number(event.id),
+        startDate: event.startStr,
+        endDate: event.endStr,
+      });
+    } else if (event.extendedProps.source === "google") {
+      // Eventos de Google no se pueden editar desde aquí
+      toast.info("Los eventos de Google Calendar no se pueden editar desde aquí");
+    }
   };
 
   const handleEventResize = (resizeInfo: any) => {
@@ -341,18 +366,17 @@ export default function Calendar() {
       return;
     }
 
-    // Para eventos de Google Calendar
-    updateEventMutation.mutate({
-      eventId: event.id,
-      start: {
-        dateTime: event.allDay ? undefined : event.startStr,
-        date: event.allDay ? event.startStr.split("T")[0] : undefined,
-      },
-      end: {
-        dateTime: event.allDay ? undefined : event.endStr,
-        date: event.allDay ? event.endStr.split("T")[0] : undefined,
-      },
-    });
+    // Para eventos locales
+    if (event.extendedProps.source === "local") {
+      updateEventMutation.mutate({
+        eventId: Number(event.id),
+        startDate: event.startStr,
+        endDate: event.endStr,
+      });
+    } else if (event.extendedProps.source === "google") {
+      // Eventos de Google no se pueden editar desde aquí
+      toast.info("Los eventos de Google Calendar no se pueden editar desde aquí");
+    }
   };
 
   const handleDrop = (dropInfo: any) => {
@@ -387,22 +411,17 @@ export default function Calendar() {
     }
 
     const eventData = {
-      summary: formData.title,
+      title: formData.title,
       description: formData.description,
-      start: {
-        dateTime: formData.allDay ? undefined : formData.start,
-        date: formData.allDay ? formData.start.split("T")[0] : undefined,
-      },
-      end: {
-        dateTime: formData.allDay ? undefined : formData.end,
-        date: formData.allDay ? formData.end.split("T")[0] : undefined,
-      },
-      colorId: formData.colorId,
+      startDate: formData.start,
+      endDate: formData.end,
+      allDay: formData.allDay,
+      color: formData.colorId,
     };
 
     if (selectedEvent?.id) {
       updateEventMutation.mutate({
-        eventId: selectedEvent.id,
+        eventId: Number(selectedEvent.id),
         ...eventData,
       });
     } else {
@@ -413,13 +432,16 @@ export default function Calendar() {
   const handleDelete = () => {
     if (selectedEvent?.id) {
       if (confirm("¿Estás seguro de que quieres eliminar este evento?")) {
-        deleteEventMutation.mutate({ eventId: selectedEvent.id });
+        deleteEventMutation.mutate({ eventId: Number(selectedEvent.id) });
       }
     }
   };
 
   const handleRefresh = () => {
-    utils.calendar.list.invalidate();
+    utils.calendarEvents.list.invalidate();
+    if (isGoogleConnected) {
+      utils.calendar.list.invalidate();
+    }
     utils.tasks.list.invalidate();
     toast.success("Calendario actualizado");
   };
