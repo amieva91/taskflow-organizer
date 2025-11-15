@@ -187,3 +187,11 @@
 - [x] Mostrar huecos disponibles como eventos especiales en el calendario
 - [x] Añadir duración mínima configurable para filtrar huecos
 - [x] Colorear huecos disponibles con color distintivo
+
+## Drag and Drop de Tareas al Calendario
+- [x] Añadir lista lateral de tareas sin fecha en el calendario
+- [x] Implementar drag and drop de tareas al calendario
+- [x] Detectar cuando se suelta sobre un hueco disponible
+- [x] Actualizar tarea con fechas del hueco seleccionado
+- [x] Feedback visual durante el arrastre
+- [x] Mostrar confirmación al agendar tarea

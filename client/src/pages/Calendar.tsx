@@ -93,6 +93,17 @@ export default function Calendar() {
     },
   });
 
+  const updateTaskMutation = trpc.tasks.update.useMutation({
+    onSuccess: () => {
+      toast.success("✅ Tarea agendada exitosamente");
+      utils.tasks.list.invalidate();
+      utils.calendar.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Error al agendar tarea: " + error.message);
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       title: "",
@@ -318,6 +329,29 @@ export default function Calendar() {
     });
   };
 
+  const handleDrop = (dropInfo: any) => {
+    const taskId = dropInfo.draggedEl?.getAttribute('data-task-id');
+    if (!taskId) return;
+
+    const task = tasks?.find(t => t.id === Number(taskId));
+    if (!task) return;
+
+    // Calcular fechas basadas en el drop
+    const dropDate = new Date(dropInfo.dateStr || dropInfo.date);
+    const startDate = new Date(dropDate);
+    startDate.setHours(9, 0, 0, 0); // Inicio a las 9am
+    
+    const endDate = new Date(startDate);
+    endDate.setHours(startDate.getHours() + 2); // Duración por defecto 2 horas
+
+    // Actualizar la tarea con las nuevas fechas
+    updateTaskMutation.mutate({
+      id: task.id,
+      startDate: startDate.toISOString(),
+      dueDate: endDate.toISOString(),
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -442,8 +476,50 @@ export default function Calendar() {
           </Card>
         )}
 
-        <Card>
-          <CardContent className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar de tareas sin fecha */}
+          <Card className="lg:col-span-1">
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-lg mb-4">Tareas sin Agendar</h3>
+              <div className="space-y-2">
+                {tasks?.filter(t => !t.dueDate).map(task => (
+                  <div
+                    key={task.id}
+                    draggable
+                    data-task-id={task.id}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('taskId', task.id.toString());
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    className="p-3 bg-white border border-gray-200 rounded-lg cursor-move hover:shadow-md transition-shadow"
+                  >
+                    <div className="font-medium text-sm text-gray-900">{task.title}</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      <span className={`inline-block px-2 py-0.5 rounded ${
+                        task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                        task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {task.priority === 'urgent' ? 'Urgente' :
+                         task.priority === 'high' ? 'Alta' :
+                         task.priority === 'medium' ? 'Media' : 'Baja'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {tasks?.filter(t => !t.dueDate).length === 0 && (
+                  <div className="text-center text-gray-500 text-sm py-8">
+                    No hay tareas sin agendar
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Calendario */}
+          <Card className="lg:col-span-3">
+            <CardContent className="p-6">
             {!isGoogleConnected ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
                 <CalendarIcon className="h-16 w-16 text-gray-300" />
@@ -487,6 +563,8 @@ export default function Calendar() {
                 selectMirror={true}
                 dayMaxEvents={true}
                 weekends={true}
+                droppable={true}
+                drop={handleDrop}
                 select={handleDateSelect}
                 eventClick={handleEventClick}
                 eventDrop={handleEventDrop}
@@ -500,6 +578,7 @@ export default function Calendar() {
             )}
           </CardContent>
         </Card>
+        </div>
 
         <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
