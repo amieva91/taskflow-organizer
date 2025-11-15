@@ -128,3 +128,12 @@
 
 ## Bugs a Corregir
 - [x] Solucionar problema de carga infinita en el calendario
+
+## Página de Tareas con Vista Kanban
+- [x] Implementar vista Kanban con columnas por estado
+- [x] Drag-and-drop para mover tareas entre columnas
+- [x] Modal para crear nuevas tareas
+- [x] Modal para editar tareas existentes
+- [x] Filtros por prioridad, proyecto y tipo
+- [x] Búsqueda de tareas
+- [ ] Asignación de tareas a contactos
