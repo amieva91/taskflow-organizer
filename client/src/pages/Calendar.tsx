@@ -73,6 +73,12 @@ export default function Calendar() {
   });
   const [draggedEvent, setDraggedEvent] = useState<any>(null);
   const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+  const [isRecurrenceDialogOpen, setIsRecurrenceDialogOpen] = useState(false);
+  const [pendingRecurrenceUpdate, setPendingRecurrenceUpdate] = useState<{
+    event: any;
+    newStart: Date;
+    newEnd: Date;
+  } | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -1006,19 +1012,30 @@ export default function Calendar() {
                               
                               const newEnd = new Date(newStart.getTime() + duration);
                               
-                              // Actualizar evento
-                              updateEventMutation.mutate({
-                                eventId: draggedEvent.id,
-                                title: draggedEvent.title,
-                                description: draggedEvent.description,
-                                startDate: newStart.toISOString(),
-                                endDate: newEnd.toISOString(),
-                                allDay: draggedEvent.allDay,
-                                type: draggedEvent.type,
-                                location: draggedEvent.location,
-                              });
-                              
-                              setDraggedEvent(null);
+                              // Verificar si es un evento recurrente
+                              if (draggedEvent.isRecurring && draggedEvent.recurrencePattern !== 'none') {
+                                // Mostrar diálogo de confirmación
+                                setPendingRecurrenceUpdate({
+                                  event: draggedEvent,
+                                  newStart,
+                                  newEnd,
+                                });
+                                setIsRecurrenceDialogOpen(true);
+                              } else {
+                                // Actualizar evento normal directamente
+                                updateEventMutation.mutate({
+                                  eventId: draggedEvent.id,
+                                  title: draggedEvent.title,
+                                  description: draggedEvent.description,
+                                  startDate: newStart.toISOString(),
+                                  endDate: newEnd.toISOString(),
+                                  allDay: draggedEvent.allDay,
+                                  type: draggedEvent.type,
+                                  location: draggedEvent.location,
+                                });
+                                
+                                setDraggedEvent(null);
+                              }
                             }
                           }}
                         >
@@ -1495,6 +1512,91 @@ export default function Calendar() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Diálogo de confirmación para eventos recurrentes */}
+        <Dialog open={isRecurrenceDialogOpen} onOpenChange={setIsRecurrenceDialogOpen}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Modificar Evento Recurrente</DialogTitle>
+              <DialogDescription>
+                Este es un evento recurrente. ¿Cómo deseas modificarlo?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-4">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left"
+                onClick={() => {
+                  if (pendingRecurrenceUpdate) {
+                    // Modificar solo esta instancia
+                    updateEventMutation.mutate({
+                      eventId: pendingRecurrenceUpdate.event.id,
+                      title: pendingRecurrenceUpdate.event.title,
+                      description: pendingRecurrenceUpdate.event.description,
+                      startDate: pendingRecurrenceUpdate.newStart.toISOString(),
+                      endDate: pendingRecurrenceUpdate.newEnd.toISOString(),
+                      allDay: pendingRecurrenceUpdate.event.allDay,
+                      type: pendingRecurrenceUpdate.event.type,
+                      location: pendingRecurrenceUpdate.event.location,
+                    });
+                  }
+                  setIsRecurrenceDialogOpen(false);
+                  setPendingRecurrenceUpdate(null);
+                  setDraggedEvent(null);
+                }}
+              >
+                <div>
+                  <div className="font-medium">Solo esta instancia</div>
+                  <div className="text-xs text-muted-foreground">
+                    Modificar únicamente este evento
+                  </div>
+                </div>
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left"
+                onClick={() => {
+                  if (pendingRecurrenceUpdate) {
+                    // Modificar toda la serie (por ahora, mismo comportamiento)
+                    // TODO: Implementar lógica para modificar todos los eventos de la serie
+                    updateEventMutation.mutate({
+                      eventId: pendingRecurrenceUpdate.event.id,
+                      title: pendingRecurrenceUpdate.event.title,
+                      description: pendingRecurrenceUpdate.event.description,
+                      startDate: pendingRecurrenceUpdate.newStart.toISOString(),
+                      endDate: pendingRecurrenceUpdate.newEnd.toISOString(),
+                      allDay: pendingRecurrenceUpdate.event.allDay,
+                      type: pendingRecurrenceUpdate.event.type,
+                      location: pendingRecurrenceUpdate.event.location,
+                    });
+                  }
+                  setIsRecurrenceDialogOpen(false);
+                  setPendingRecurrenceUpdate(null);
+                  setDraggedEvent(null);
+                }}
+              >
+                <div>
+                  <div className="font-medium">Toda la serie</div>
+                  <div className="text-xs text-muted-foreground">
+                    Modificar todos los eventos recurrentes
+                  </div>
+                </div>
+              </Button>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setIsRecurrenceDialogOpen(false);
+                  setPendingRecurrenceUpdate(null);
+                  setDraggedEvent(null);
+                }}
+              >
+                Cancelar
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

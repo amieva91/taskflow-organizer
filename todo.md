@@ -359,3 +359,12 @@
 - [x] Mantener hora original del evento al cambiar de día
 - [x] Calcular duración del evento y aplicarla a nueva fecha
 - [x] Limpiar estado de drag al finalizar (onDragEnd)
+
+## Confirmación de Modificación de Eventos Recurrentes
+- [x] Detectar cuando se arrastra un evento recurrente (verificar isRecurring y recurrencePattern)
+- [x] Mostrar diálogo de confirmación antes de aplicar cambios
+- [x] Añadir opción "Solo esta instancia" en el diálogo
+- [x] Añadir opción "Toda la serie" en el diálogo
+- [x] Implementar lógica para modificar solo instancia individual
+- [x] Añadir botón Cancelar para cerrar diálogo sin cambios
+- [x] Limpiar estados al confirmar o cancelar (pendingRecurrenceUpdate, draggedEvent)
