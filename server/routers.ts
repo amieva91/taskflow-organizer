@@ -13,6 +13,7 @@ import * as aiSuggestions from "./aiSuggestions";
 import * as reminders from "./reminders";
 import * as workload from "./workload";
 import * as quickNotesModule from "./quickNotes";
+import * as calendarEventsModule from "./calendarEvents";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -805,6 +806,88 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         return await quickNotesModule.reorderQuickNotes(ctx.user.id, input.noteOrders);
       }),
+  }),
+
+  calendarEvents: router({
+    list: protectedProcedure
+      .input(z.object({
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const start = new Date(input.startDate);
+        const end = new Date(input.endDate);
+        return await calendarEventsModule.getCalendarEvents(ctx.user.id, start, end);
+      }),
+
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      return await calendarEventsModule.getAllCalendarEvents(ctx.user.id);
+    }),
+
+    getById: protectedProcedure
+      .input(z.object({ eventId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        return await calendarEventsModule.getCalendarEventById(ctx.user.id, input.eventId);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        startDate: z.string(),
+        endDate: z.string(),
+        allDay: z.boolean().optional(),
+        location: z.string().optional(),
+        color: z.string().optional(),
+        type: z.enum(["personal", "professional", "meeting", "reminder"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await calendarEventsModule.createCalendarEvent(ctx.user.id, {
+          title: input.title,
+          description: input.description,
+          startDate: new Date(input.startDate),
+          endDate: new Date(input.endDate),
+          allDay: input.allDay,
+          location: input.location,
+          color: input.color,
+          type: input.type,
+        });
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        eventId: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        allDay: z.boolean().optional(),
+        location: z.string().optional(),
+        color: z.string().optional(),
+        type: z.enum(["personal", "professional", "meeting", "reminder"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await calendarEventsModule.updateCalendarEvent(ctx.user.id, input.eventId, {
+          title: input.title,
+          description: input.description,
+          startDate: input.startDate ? new Date(input.startDate) : undefined,
+          endDate: input.endDate ? new Date(input.endDate) : undefined,
+          allDay: input.allDay,
+          location: input.location,
+          color: input.color,
+          type: input.type,
+        });
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ eventId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return await calendarEventsModule.deleteCalendarEvent(ctx.user.id, input.eventId);
+      }),
+
+    getUnsynced: protectedProcedure.query(async ({ ctx }) => {
+      return await calendarEventsModule.getUnsyncedEvents(ctx.user.id);
+    }),
   }),
 });
 

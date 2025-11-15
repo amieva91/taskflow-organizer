@@ -36,6 +36,13 @@
       "when": 1763220390340,
       "tag": "0004_thankful_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1763221186726,
+      "tag": "0005_thick_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }

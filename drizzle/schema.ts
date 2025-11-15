@@ -322,3 +322,29 @@ export const quickNotes = mysqlTable("quickNotes", {
 
 export type QuickNote = typeof quickNotes.$inferSelect;
 export type InsertQuickNote = typeof quickNotes.$inferInsert;
+
+/**
+ * Eventos del calendario local
+ * Almacena eventos creados en la aplicación, independientes de Google Calendar
+ */
+export const calendarEvents = mysqlTable("calendarEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  startDate: datetime("startDate").notNull(),
+  endDate: datetime("endDate").notNull(),
+  allDay: boolean("allDay").default(false).notNull(),
+  location: varchar("location", { length: 500 }),
+  color: varchar("color", { length: 7 }),
+  type: mysqlEnum("type", ["personal", "professional", "meeting", "reminder"]).default("personal").notNull(),
+  // Sincronización con Google Calendar
+  googleEventId: varchar("googleEventId", { length: 255 }), // ID del evento en Google Calendar si está sincronizado
+  isSynced: boolean("isSynced").default(false).notNull(), // Si está sincronizado con Google
+  lastSyncedAt: timestamp("lastSyncedAt"), // Última vez que se sincronizó
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
