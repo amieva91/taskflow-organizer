@@ -14,6 +14,7 @@ import Contacts from "./pages/Contacts";
 import Settings from "./pages/Settings";
 import Statistics from "./pages/Statistics";
 import Workload from "./pages/Workload";
+import NotificationSettings from "./pages/NotificationSettings";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -29,6 +30,7 @@ function Router() {
       <Route path={"/statistics"} component={Statistics} />
       <Route path={"/workload"} component={Workload} />
       <Route path={"/settings"} component={Settings} />
+      <Route path={"/settings/notifications"} component={NotificationSettings} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

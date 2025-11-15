@@ -14,6 +14,7 @@ import * as reminders from "./reminders";
 import * as workload from "./workload";
 import * as quickNotesModule from "./quickNotes";
 import * as calendarEventsModule from "./calendarEvents";
+import * as notificationSettingsModule from "./notificationSettings";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -924,6 +925,28 @@ export const appRouter = router({
         );
 
         return result;
+      }),
+  }),
+
+  notificationSettings: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return await notificationSettingsModule.getNotificationSettings(ctx.user.id);
+    }),
+
+    upsert: protectedProcedure
+      .input(z.object({
+        enabled: z.boolean().optional(),
+        notificationMinutes: z.number().optional(),
+        notifyPersonal: z.boolean().optional(),
+        notifyProfessional: z.boolean().optional(),
+        notifyMeeting: z.boolean().optional(),
+        notifyReminder: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await notificationSettingsModule.upsertNotificationSettings({
+          userId: ctx.user.id,
+          ...input,
+        });
       }),
   }),
 });

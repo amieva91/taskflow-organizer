@@ -348,3 +348,20 @@ export const calendarEvents = mysqlTable("calendarEvents", {
 
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 export type InsertCalendarEvent = typeof calendarEvents.$inferInsert;
+
+// Tabla de configuración de notificaciones por usuario
+export const notificationSettings = mysqlTable("notificationSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  enabled: boolean("enabled").default(true).notNull(),
+  notificationMinutes: int("notificationMinutes").default(15).notNull(), // Minutos de antelación
+  notifyPersonal: boolean("notifyPersonal").default(false).notNull(),
+  notifyProfessional: boolean("notifyProfessional").default(false).notNull(),
+  notifyMeeting: boolean("notifyMeeting").default(true).notNull(),
+  notifyReminder: boolean("notifyReminder").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type NotificationSettings = typeof notificationSettings.$inferSelect;
+export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;

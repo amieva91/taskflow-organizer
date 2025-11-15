@@ -88,11 +88,18 @@ export default function Calendar() {
     retry: false,
   });
 
-  // Activar notificaciones para eventos locales
+  // Obtener configuración de notificaciones
+  const { data: notificationSettings } = trpc.notificationSettings.get.useQuery();
+
+  // Activar notificaciones para eventos locales con configuración personalizada
   const { permission, requestPermission, isSupported } = useEventNotifications({
     events: localEvents || [],
-    enabled: true,
-    notificationMinutes: 15,
+    enabled: notificationSettings?.enabled ?? true,
+    notificationMinutes: notificationSettings?.notificationMinutes ?? 15,
+    notifyPersonal: notificationSettings?.notifyPersonal ?? false,
+    notifyProfessional: notificationSettings?.notifyProfessional ?? false,
+    notifyMeeting: notificationSettings?.notifyMeeting ?? true,
+    notifyReminder: notificationSettings?.notifyReminder ?? true,
   });
 
   // Combinar eventos locales y de Google

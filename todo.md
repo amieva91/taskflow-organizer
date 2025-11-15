@@ -308,3 +308,14 @@
 - [x] Mostrar título, hora y ubicación del evento en la notificación
 - [x] Evitar notificaciones duplicadas para el mismo evento
 - [x] Añadir banner informativo para activar notificaciones
+
+## Configuración Personalizable de Notificaciones
+- [x] Crear tabla notificationSettings en base de datos
+- [x] Crear endpoints para guardar/obtener preferencias de notificaciones
+- [x] Crear página de Configuración de Notificaciones en UI
+- [x] Añadir selector de tiempo de antelación (5/10/15/30/60/120 minutos)
+- [x] Añadir checkboxes para tipos de eventos a notificar (Personal/Profesional/Reunión/Recordatorio)
+- [x] Añadir toggle para activar/desactivar notificaciones globalmente
+- [x] Actualizar useEventNotifications para leer preferencias del usuario
+- [x] Añadir enlace a configuración de notificaciones en página Settings
+- [x] Integrar configuración con Calendar.tsx

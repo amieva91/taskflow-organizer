@@ -12,6 +12,10 @@ interface UseEventNotificationsOptions {
   events: Event[];
   enabled?: boolean;
   notificationMinutes?: number;
+  notifyPersonal?: boolean;
+  notifyProfessional?: boolean;
+  notifyMeeting?: boolean;
+  notifyReminder?: boolean;
 }
 
 /**
@@ -22,6 +26,10 @@ export function useEventNotifications({
   events,
   enabled = true,
   notificationMinutes = 15,
+  notifyPersonal = false,
+  notifyProfessional = false,
+  notifyMeeting = true,
+  notifyReminder = true,
 }: UseEventNotificationsOptions) {
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const notifiedEventsRef = useRef<Set<number>>(new Set());
@@ -52,8 +60,14 @@ export function useEventNotifications({
       const notificationTime = notificationMinutes * 60 * 1000; // Convertir a milisegundos
 
       events.forEach((event) => {
-        // Solo notificar eventos tipo "meeting" o "reminder"
-        if (event.type !== 'meeting' && event.type !== 'reminder') {
+        // Verificar si el tipo de evento debe notificarse según configuración
+        const shouldNotify = 
+          (event.type === 'personal' && notifyPersonal) ||
+          (event.type === 'professional' && notifyProfessional) ||
+          (event.type === 'meeting' && notifyMeeting) ||
+          (event.type === 'reminder' && notifyReminder);
+
+        if (!shouldNotify) {
           return;
         }
 

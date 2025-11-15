@@ -157,6 +157,32 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Bell className="h-5 w-5 text-blue-600" />
+                <CardTitle>Notificaciones de Eventos</CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation('/settings/notifications')}
+              >
+                Configurar
+              </Button>
+            </div>
+            <CardDescription>
+              Personaliza cómo y cuándo recibes recordatorios de eventos del calendario
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600">
+              Accede a la configuración avanzada para personalizar el tiempo de antelación y los tipos de eventos que generan notificaciones.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <div className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-blue-600" />
               <CardTitle>Recordatorios Automáticos</CardTitle>

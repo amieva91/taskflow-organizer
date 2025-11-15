@@ -43,6 +43,13 @@
       "when": 1763221186726,
       "tag": "0005_thick_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1763224475397,
+      "tag": "0006_blue_the_professor",
+      "breakpoints": true
     }
   ]
 }
