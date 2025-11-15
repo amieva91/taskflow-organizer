@@ -17,6 +17,21 @@ import { toast } from "sonner";
 import { RefreshCw, Plus, Calendar as CalendarIcon } from "lucide-react";
 import esLocale from "@fullcalendar/core/locales/es";
 
+// Colores predefinidos para tipos de evento
+const EVENT_TYPE_COLORS = {
+  personal: "#3b82f6",      // Azul
+  professional: "#8b5cf6",  // Morado
+  meeting: "#f59e0b",       // Naranja
+  reminder: "#10b981",      // Verde
+} as const;
+
+const EVENT_TYPE_LABELS = {
+  personal: "Personal",
+  professional: "Profesional",
+  meeting: "Reunión",
+  reminder: "Recordatorio",
+} as const;
+
 interface EventFormData {
   id?: string;
   title: string;
@@ -25,6 +40,8 @@ interface EventFormData {
   end: string;
   allDay: boolean;
   colorId?: string;
+  type?: "personal" | "professional" | "meeting" | "reminder";
+  location?: string;
 }
 
 export default function Calendar() {
@@ -312,6 +329,9 @@ export default function Calendar() {
       start: event.startStr,
       end: event.endStr,
       allDay: event.allDay,
+      type: event.extendedProps.type,
+      location: event.extendedProps.location,
+      colorId: event.backgroundColor,
     });
     setSelectedEvent({
       id: event.id,
@@ -320,6 +340,9 @@ export default function Calendar() {
       start: event.startStr,
       end: event.endStr,
       allDay: event.allDay,
+      type: event.extendedProps.type,
+      location: event.extendedProps.location,
+      colorId: event.backgroundColor,
     });
     setIsEventDialogOpen(true);
   };
@@ -430,6 +453,8 @@ export default function Calendar() {
       endDate: formData.end,
       allDay: formData.allDay,
       color: formData.colorId,
+      type: formData.type || "personal",
+      location: formData.location,
     };
 
     if (selectedEvent?.id) {
@@ -743,28 +768,44 @@ export default function Calendar() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="color">Color</Label>
+                  <Label htmlFor="type">Tipo de Evento *</Label>
                   <Select
-                    value={formData.colorId}
-                    onValueChange={(value) => setFormData({ ...formData, colorId: value })}
+                    value={formData.type || "personal"}
+                    onValueChange={(value: "personal" | "professional" | "meeting" | "reminder") => 
+                      setFormData({ 
+                        ...formData, 
+                        type: value,
+                        colorId: EVENT_TYPE_COLORS[value]
+                      })
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar color" />
+                      <SelectValue placeholder="Seleccionar tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Lavanda</SelectItem>
-                      <SelectItem value="2">Salvia</SelectItem>
-                      <SelectItem value="3">Uva</SelectItem>
-                      <SelectItem value="4">Flamingo</SelectItem>
-                      <SelectItem value="5">Plátano</SelectItem>
-                      <SelectItem value="6">Mandarina</SelectItem>
-                      <SelectItem value="7">Pavo real</SelectItem>
-                      <SelectItem value="8">Grafito</SelectItem>
-                      <SelectItem value="9">Arándano</SelectItem>
-                      <SelectItem value="10">Albahaca</SelectItem>
-                      <SelectItem value="11">Tomate</SelectItem>
+                      {Object.entries(EVENT_TYPE_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: EVENT_TYPE_COLORS[key as keyof typeof EVENT_TYPE_COLORS] }}
+                            />
+                            {label}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="location">Ubicación</Label>
+                  <Input
+                    id="location"
+                    value={formData.location || ""}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="Lugar del evento..."
+                  />
                 </div>
               </div>
 

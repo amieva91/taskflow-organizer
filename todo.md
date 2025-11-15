@@ -276,3 +276,10 @@
 - [ ] Permitir exportar eventos locales a Google Calendar
 - [ ] Añadir indicador visual de eventos sincronizados vs locales
 - [ ] Mantener compatibilidad con flujo actual para usuarios que ya usan Google
+
+## Selector de Tipo de Evento
+- [x] Añadir campo de tipo de evento en formulario de creación
+- [x] Definir colores predefinidos para cada tipo (Personal, Profesional, Reunión, Recordatorio)
+- [x] Mostrar tipo de evento visualmente en el calendario
+- [x] Añadir campo de ubicación en formulario de eventos
+- [ ] Permitir filtrar eventos por tipo
