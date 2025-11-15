@@ -303,3 +303,21 @@ export const sentReminders = mysqlTable("sentReminders", {
 
 export type SentReminder = typeof sentReminders.$inferSelect;
 export type InsertSentReminder = typeof sentReminders.$inferInsert;
+
+/**
+ * Notas rápidas del día (Quick Capture)
+ * Para capturar ideas y tareas sobre la marcha
+ */
+export const quickNotes = mysqlTable("quickNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  content: text("content").notNull(),
+  isCompleted: int("isCompleted").default(0).notNull(), // 0 = false, 1 = true
+  date: timestamp("date").notNull(), // Fecha del día para el que es la nota
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  convertedToTaskId: int("convertedToTaskId"), // Si se convirtió en tarea, referencia al ID
+});
+
+export type QuickNote = typeof quickNotes.$inferSelect;
+export type InsertQuickNote = typeof quickNotes.$inferInsert;

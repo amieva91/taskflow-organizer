@@ -243,3 +243,20 @@
 - [x] Permitir filtrar por departamento
 - [x] Mostrar tareas asignadas a cada contacto
 - [x] Añadir vista de timeline con asignaciones
+
+## Lista Rápida del Día (Quick Capture)
+- [x] Crear tabla quickNotes en el esquema de base de datos
+- [x] Implementar backend para gestionar notas rápidas (CRUD)
+- [x] Crear componente QuickCapture accesible desde el Dashboard
+- [x] Añadir widget flotante/sidebar para captura rápida sin salir de la página actual
+- [x] Permitir añadir notas rápidas con un solo campo de texto
+- [x] Implementar checkbox para marcar notas como completadas
+- [x] Añadir botón para convertir nota rápida en tarea programada
+- [x] Permitir programar nota para otro día (mover a lista del día siguiente)
+- [ ] Implementar opción de archivar notas completadas
+- [ ] Añadir filtro para ver notas de días anteriores
+- [x] Persistir notas del día automáticamente al día siguiente si no se completan
+- [x] Añadir atajo de teclado (Ctrl+K o Cmd+K) para abrir captura rápida
+- [ ] Implementar drag and drop para reordenar prioridades en la lista
+- [ ] Añadir timestamps automáticos de creación
+- [ ] Notificación al final del día para revisar notas pendientes

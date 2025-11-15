@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, CheckSquare, FolderKanban, Settings, BarChart3, Activity } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, CheckSquare, FolderKanban, Settings, BarChart3, Activity, Zap } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { QuickCapture } from './QuickCapture';
 import { Button } from "./ui/button";
 
 const menuItems = [
@@ -126,6 +127,7 @@ function DashboardLayoutContent({
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
+  const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
@@ -165,6 +167,18 @@ function DashboardLayoutContent({
       document.body.style.userSelect = "";
     };
   }, [isResizing, setSidebarWidth]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setIsQuickCaptureOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <>
@@ -294,6 +308,20 @@ function DashboardLayoutContent({
         )}
         <main className="flex-1 p-4">{children}</main>
       </SidebarInset>
+
+      <Button
+        onClick={() => setIsQuickCaptureOpen(true)}
+        className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg z-50"
+        size="icon"
+        title="Captura Rápida (Ctrl+K)"
+      >
+        <Zap className="h-6 w-6" />
+      </Button>
+
+      <QuickCapture
+        isOpen={isQuickCaptureOpen}
+        onClose={() => setIsQuickCaptureOpen(false)}
+      />
     </>
   );
 }

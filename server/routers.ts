@@ -12,6 +12,7 @@ import * as emailNotifications from "./emailNotifications";
 import * as aiSuggestions from "./aiSuggestions";
 import * as reminders from "./reminders";
 import * as workload from "./workload";
+import * as quickNotesModule from "./quickNotes";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -719,6 +720,79 @@ export const appRouter = router({
         const start = new Date(input.startDate);
         const end = new Date(input.endDate);
         return await workload.getContactDailyAvailability(ctx.user.id, input.contactId, start, end);
+      }),
+  }),
+
+  quickNotes: router({
+    getByDate: protectedProcedure
+      .input(z.object({ date: z.string() }))
+      .query(async ({ input, ctx }) => {
+        const date = new Date(input.date);
+        return await quickNotesModule.getQuickNotesByDate(ctx.user.id, date);
+      }),
+
+    getPending: protectedProcedure.query(async ({ ctx }) => {
+      return await quickNotesModule.getPendingQuickNotes(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        content: z.string(),
+        date: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const date = input.date ? new Date(input.date) : undefined;
+        return await quickNotesModule.createQuickNote(ctx.user.id, input.content, date);
+      }),
+
+    toggle: protectedProcedure
+      .input(z.object({ noteId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return await quickNotesModule.toggleQuickNoteComplete(ctx.user.id, input.noteId);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ noteId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        return await quickNotesModule.deleteQuickNote(ctx.user.id, input.noteId);
+      }),
+
+    moveToDate: protectedProcedure
+      .input(z.object({
+        noteId: z.number(),
+        newDate: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const date = new Date(input.newDate);
+        return await quickNotesModule.moveQuickNoteToDate(ctx.user.id, input.noteId, date);
+      }),
+
+    convertToTask: protectedProcedure
+      .input(z.object({
+        noteId: z.number(),
+        title: z.string(),
+        description: z.string().optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+        startDate: z.string().optional(),
+        dueDate: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await quickNotesModule.convertQuickNoteToTask(ctx.user.id, input.noteId, {
+          title: input.title,
+          description: input.description,
+          priority: input.priority,
+          startDate: input.startDate ? new Date(input.startDate) : undefined,
+          dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
+        });
+      }),
+
+    updateContent: protectedProcedure
+      .input(z.object({
+        noteId: z.number(),
+        content: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await quickNotesModule.updateQuickNoteContent(ctx.user.id, input.noteId, input.content);
       }),
   }),
 });
