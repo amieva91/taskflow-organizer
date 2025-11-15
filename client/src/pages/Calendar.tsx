@@ -14,7 +14,7 @@ import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Plus, Calendar as CalendarIcon } from "lucide-react";
+import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays } from "lucide-react";
 import esLocale from "@fullcalendar/core/locales/es";
 
 // Colores predefinidos para tipos de evento
@@ -58,6 +58,7 @@ export default function Calendar() {
     meeting: true,
     reminder: true,
   });
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -516,6 +517,25 @@ export default function Calendar() {
             </p>
           </div>
           <div className="flex gap-2 items-center">
+            {/* Toggle de vista */}
+            <div className="flex gap-1 border rounded-lg p-1">
+              <Button
+                variant={viewMode === "calendar" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("calendar")}
+              >
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Calendario
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4 mr-2" />
+                Lista
+              </Button>
+            </div>
             {isGoogleConnected && (
               <Button 
                 variant="outline" 
@@ -675,64 +695,177 @@ export default function Calendar() {
             </CardContent>
           </Card>
 
-          {/* Calendario */}
+          {/* Calendario o Lista */}
           <Card className="lg:col-span-3">
             <CardContent className="p-6">
-            {!isGoogleConnected ? (
-              <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <CalendarIcon className="h-16 w-16 text-gray-300" />
-                <div className="text-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Conecta tu cuenta de Google
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Para sincronizar eventos de Google Calendar, conecta tu cuenta en Configuración
-                  </p>
-                  <Button onClick={() => window.location.href = "/settings"}>
-                    Ir a Configuración
-                  </Button>
+            {viewMode === "calendar" ? (
+              // Vista de Calendario
+              !isGoogleConnected ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <CalendarIcon className="h-16 w-16 text-gray-300" />
+                  <div className="text-center">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Conecta tu cuenta de Google
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Para sincronizar eventos de Google Calendar, conecta tu cuenta en Configuración
+                    </p>
+                    <Button onClick={() => window.location.href = "/settings"}>
+                      Ir a Configuración
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ) : isLoading ? (
-              <div className="flex justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
+              ) : isLoading ? (
+                <div className="flex justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <FullCalendar
+                  ref={calendarRef}
+                  plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  locale={esLocale}
+                  headerToolbar={{
+                    left: "prev,next today",
+                    center: "title",
+                    right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
+                  }}
+                  buttonText={{
+                    today: "Hoy",
+                    month: "Mes",
+                    week: "Semana",
+                    day: "Día",
+                    list: "Lista",
+                  }}
+                  events={events}
+                  editable={true}
+                  selectable={true}
+                  selectMirror={true}
+                  dayMaxEvents={true}
+                  weekends={true}
+                  droppable={true}
+                  drop={handleDrop}
+                  select={handleDateSelect}
+                  eventClick={handleEventClick}
+                  eventDrop={handleEventDrop}
+                  eventResize={handleEventResize}
+                  height="auto"
+                  slotMinTime="06:00:00"
+                  slotMaxTime="23:00:00"
+                  allDaySlot={true}
+                  nowIndicator={true}
+                />
+              )
             ) : (
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                locale={esLocale}
-                headerToolbar={{
-                  left: "prev,next today",
-                  center: "title",
-                  right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
-                }}
-                buttonText={{
-                  today: "Hoy",
-                  month: "Mes",
-                  week: "Semana",
-                  day: "Día",
-                  list: "Lista",
-                }}
-                events={events}
-                editable={true}
-                selectable={true}
-                selectMirror={true}
-                dayMaxEvents={true}
-                weekends={true}
-                droppable={true}
-                drop={handleDrop}
-                select={handleDateSelect}
-                eventClick={handleEventClick}
-                eventDrop={handleEventDrop}
-                eventResize={handleEventResize}
-                height="auto"
-                slotMinTime="06:00:00"
-                slotMaxTime="23:00:00"
-                allDaySlot={true}
-                nowIndicator={true}
-              />
+              // Vista de Lista
+              isLoading ? (
+                <div className="flex justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ubicación</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {calendarEvents && calendarEvents.length > 0 ? (
+                        calendarEvents
+                          .filter((event: any) => {
+                            if (!event.type) return true;
+                            return eventTypeFilters[event.type as keyof typeof eventTypeFilters];
+                          })
+                          .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                          .map((event: any) => (
+                            <tr key={event.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                {new Date(event.startDate).toLocaleDateString('es-ES', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: event.allDay ? undefined : '2-digit',
+                                  minute: event.allDay ? undefined : '2-digit',
+                                })}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-900">{event.title}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: event.color || '#3b82f6' }}
+                                  />
+                                  <span className="text-gray-700">
+                                    {event.type ? EVENT_TYPE_LABELS[event.type as keyof typeof EVENT_TYPE_LABELS] : 'Sin tipo'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-500">{event.location || '-'}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setFormData({
+                                        id: String(event.id),
+                                        title: event.title,
+                                        description: event.description || '',
+                                        start: event.startDate,
+                                        end: event.endDate,
+                                        allDay: event.allDay,
+                                        type: event.type,
+                                        location: event.location,
+                                        colorId: event.color,
+                                      });
+                                      setSelectedEvent({
+                                        id: String(event.id),
+                                        title: event.title,
+                                        description: event.description || '',
+                                        start: event.startDate,
+                                        end: event.endDate,
+                                        allDay: event.allDay,
+                                        type: event.type,
+                                        location: event.location,
+                                        colorId: event.color,
+                                      });
+                                      setIsEventDialogOpen(true);
+                                    }}
+                                  >
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
+                                        deleteEventMutation.mutate({ eventId: event.id });
+                                      }
+                                    }}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    Eliminar
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                            No hay eventos para mostrar
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )
             )}
           </CardContent>
         </Card>

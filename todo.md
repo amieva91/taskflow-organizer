@@ -286,3 +286,10 @@
   - [x] Añadir estado de filtros activos
   - [x] Crear UI con checkboxes en barra superior
   - [x] Aplicar filtros a eventos mostrados en calendario
+
+## Vista de Lista de Eventos
+- [x] Añadir toggle entre vista calendario y vista lista
+- [x] Crear tabla compacta con columnas: fecha, título, tipo, ubicación, acciones
+- [x] Aplicar filtros de tipo a vista de lista
+- [x] Añadir acciones rápidas (editar/eliminar) en cada fila
+- [x] Ordenar eventos por fecha (próximos primero)
