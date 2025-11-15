@@ -231,3 +231,15 @@
 - [x] Permitir configurar tiempo de anticipación (15min, 30min, 1h, 1día)
 - [x] Añadir opción de activar/desactivar recordatorios por tarea
 - [x] Solicitar permisos de notificaciones al usuario
+
+## Vista de Carga de Trabajo por Recurso
+- [x] Crear página de Workload/Carga de Trabajo
+- [x] Implementar backend para calcular horas asignadas por contacto
+- [x] Calcular disponibilidad semanal de cada contacto
+- [x] Mostrar lista de contactos con métricas de carga
+- [x] Visualizar calendario de disponibilidad por contacto
+- [x] Añadir gráfico de barras con horas asignadas vs disponibles
+- [x] Implementar alertas de sobrecarga (>40h semanales)
+- [x] Permitir filtrar por departamento
+- [x] Mostrar tareas asignadas a cada contacto
+- [x] Añadir vista de timeline con asignaciones

@@ -13,6 +13,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Contacts from "./pages/Contacts";
 import Settings from "./pages/Settings";
 import Statistics from "./pages/Statistics";
+import Workload from "./pages/Workload";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -26,6 +27,7 @@ function Router() {
       <Route path={"/projects/:id"} component={ProjectDetail} />
       <Route path={"/contacts"} component={Contacts} />
       <Route path={"/statistics"} component={Statistics} />
+      <Route path={"/workload"} component={Workload} />
       <Route path={"/settings"} component={Settings} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

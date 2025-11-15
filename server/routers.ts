@@ -11,6 +11,7 @@ import * as googleGmail from "./googleGmail";
 import * as emailNotifications from "./emailNotifications";
 import * as aiSuggestions from "./aiSuggestions";
 import * as reminders from "./reminders";
+import * as workload from "./workload";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -682,6 +683,43 @@ export const appRouter = router({
     sendPending: protectedProcedure.mutation(async ({ ctx }) => {
       return await reminders.sendPendingReminders(ctx.user.id);
     }),
+  }),
+
+  workload: router({
+    getAllContacts: protectedProcedure
+      .input(z.object({
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const start = new Date(input.startDate);
+        const end = new Date(input.endDate);
+        return await workload.getAllContactsWorkload(ctx.user.id, start, end);
+      }),
+
+    getContactWorkload: protectedProcedure
+      .input(z.object({
+        contactId: z.number(),
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const start = new Date(input.startDate);
+        const end = new Date(input.endDate);
+        return await workload.getContactWorkload(ctx.user.id, input.contactId, start, end);
+      }),
+
+    getDailyAvailability: protectedProcedure
+      .input(z.object({
+        contactId: z.number(),
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const start = new Date(input.startDate);
+        const end = new Date(input.endDate);
+        return await workload.getContactDailyAvailability(ctx.user.id, input.contactId, start, end);
+      }),
   }),
 });
 
