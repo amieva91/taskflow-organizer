@@ -10,7 +10,7 @@
 - [x] Integrar API de Google Calendar (lectura y escritura)
 - [x] Integrar API de Gmail (lectura y envío de correos)
 - [ ] Implementar importación de eventos existentes del calendario
-- [ ] Sincronización bidireccional con Google Calendar
+- [x] Sincronización bidireccional con Google Calendar
 
 ## Gestión de Calendario
 - [ ] Vista de calendario semanal
@@ -116,3 +116,12 @@
 - [x] Integración con Google Calendar en dashboard
 - [ ] Gráficos de productividad
 - [ ] Acceso rápido a crear tarea/evento
+
+## Vista de Calendario Completa
+- [x] Implementar FullCalendar con vistas mensual, semanal y diaria
+- [x] Integración con eventos de Google Calendar
+- [x] Crear eventos mediante drag-and-drop
+- [x] Editar eventos existentes con modal
+- [x] Sincronización bidireccional con Google Calendar
+- [ ] Filtros por tipo de evento y colores
+- [x] Vista de agenda/lista de eventos
