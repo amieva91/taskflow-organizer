@@ -119,6 +119,8 @@ export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
+  const [aiSuggestions, setAISuggestions] = useState<any[]>([]);
 
   const [formData, setFormData] = useState<{
     title: string;
@@ -174,6 +176,47 @@ export default function Tasks() {
       resetForm();
     },
   });
+
+  const getAISuggestionsMutation = trpc.ai.suggestTimeSlots.useMutation({
+    onSuccess: (data) => {
+      setAISuggestions(data);
+      setShowAISuggestions(true);
+      toast.success(`Se encontraron ${data.length} sugerencias de horarios`);
+    },
+    onError: (error) => {
+      toast.error("Error al generar sugerencias: " + error.message);
+    },
+  });
+
+  const handleGetAISuggestions = () => {
+    if (!formData.title.trim()) {
+      toast.error("Ingresa un título para la tarea primero");
+      return;
+    }
+
+    getAISuggestionsMutation.mutate({
+      title: formData.title,
+      description: formData.description || undefined,
+      priority: formData.priority,
+      estimatedHours: 2,
+      assignedContactIds: formData.assignedContactIds.length > 0 ? formData.assignedContactIds : undefined,
+      type: formData.type,
+    });
+  };
+
+  const handleSelectAISuggestion = (suggestion: any) => {
+    const startDate = new Date(suggestion.start);
+    const endDate = new Date(suggestion.end);
+    
+    setFormData({
+      ...formData,
+      startDate: format(startDate, "yyyy-MM-dd'T'HH:mm"),
+      dueDate: format(endDate, "yyyy-MM-dd'T'HH:mm"),
+    });
+    
+    setShowAISuggestions(false);
+    toast.success("Horario aplicado a la tarea");
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -557,7 +600,7 @@ export default function Tasks() {
                     <Label htmlFor="startDate">Fecha de Inicio</Label>
                     <Input
                       id="startDate"
-                      type="date"
+                      type="datetime-local"
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({ ...formData, startDate: e.target.value })
@@ -569,7 +612,7 @@ export default function Tasks() {
                     <Label htmlFor="dueDate">Fecha de Vencimiento</Label>
                     <Input
                       id="dueDate"
-                      type="date"
+                      type="datetime-local"
                       value={formData.dueDate}
                       onChange={(e) =>
                         setFormData({ ...formData, dueDate: e.target.value })
@@ -577,6 +620,74 @@ export default function Tasks() {
                     />
                   </div>
                 </div>
+
+                {!selectedTask && (
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGetAISuggestions}
+                      disabled={getAISuggestionsMutation.isPending || !formData.title.trim()}
+                      className="w-full bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100"
+                    >
+                      {getAISuggestionsMutation.isPending ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Analizando calendario...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                          Sugerir horarios con IA
+                        </>
+                      )}
+                    </Button>
+                    {showAISuggestions && aiSuggestions.length > 0 && (
+                      <div className="mt-2 p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                        <h4 className="font-semibold text-sm mb-3 text-purple-900">Horarios sugeridos por IA:</h4>
+                        <div className="space-y-2">
+                          {aiSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => handleSelectAISuggestion(suggestion)}
+                              className="w-full text-left p-3 bg-white rounded-lg border border-purple-200 hover:border-purple-400 hover:shadow-md transition-all"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm text-gray-900">
+                                    {format(new Date(suggestion.start), "EEEE d 'de' MMMM", { locale: es })}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    {format(new Date(suggestion.start), "HH:mm", { locale: es })} - {format(new Date(suggestion.end), "HH:mm", { locale: es })}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {suggestion.justification}
+                                  </div>
+                                </div>
+                                <div className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded">
+                                  {suggestion.score}%
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAISuggestions(false)}
+                          className="mt-2 text-xs text-gray-500 hover:text-gray-700 underline"
+                        >
+                          Cerrar sugerencias
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">

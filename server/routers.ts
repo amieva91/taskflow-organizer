@@ -9,6 +9,7 @@ import { getAuthUrl, getTokensFromCode } from "./googleAuth";
 import * as googleCalendar from "./googleCalendar";
 import * as googleGmail from "./googleGmail";
 import * as emailNotifications from "./emailNotifications";
+import * as aiSuggestions from "./aiSuggestions";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -635,6 +636,25 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await db.deleteAttachment(input.id);
         return { success: true };
+      }),
+  }),
+
+  ai: router({
+    suggestTimeSlots: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]),
+        estimatedHours: z.number().optional(),
+        assignedContactIds: z.array(z.number()).optional(),
+        type: z.enum(["personal", "professional", "meeting", "event", "class", "training"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const suggestions = await aiSuggestions.generateTimeSlotSuggestions(
+          ctx.user.id,
+          input
+        );
+        return suggestions;
       }),
   }),
 });

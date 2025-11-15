@@ -171,3 +171,12 @@
 - [x] Enviar notificaciones automáticas al asignar contactos
 - [x] Filtrar contactos ficticios (no enviar emails a ficticios)
 - [x] Manejar errores de envío de email gracefully
+
+## Sugerencias Inteligentes de Slots de Tiempo con IA
+- [x] Crear módulo de análisis de disponibilidad con Gemini AI
+- [x] Implementar función para obtener eventos del calendario y tareas existentes
+- [x] Analizar carga de trabajo de contactos asignados
+- [x] Generar sugerencias de horarios óptimos basados en disponibilidad
+- [x] Añadir botón de sugerencias en modal de crear tarea
+- [x] Mostrar slots sugeridos con justificación de IA
+- [x] Permitir seleccionar un slot sugerido para autocompletar fechas
