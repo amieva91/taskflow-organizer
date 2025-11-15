@@ -52,6 +52,12 @@ export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<EventFormData | null>(null);
   const [showAvailableSlots, setShowAvailableSlots] = useState(false);
   const [minSlotDuration, setMinSlotDuration] = useState(1); // Duración mínima en horas
+  const [eventTypeFilters, setEventTypeFilters] = useState({
+    personal: true,
+    professional: true,
+    meeting: true,
+    reminder: true,
+  });
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -251,21 +257,28 @@ export default function Calendar() {
   const availableSlots = calculateAvailableSlots();
 
   const events = [
-    // Eventos locales
-    ...(calendarEvents || []).map((event: any) => ({
-      id: String(event.id),
-      title: event.title || "Sin título",
-      start: event.startDate,
-      end: event.endDate,
-      allDay: event.allDay,
-      backgroundColor: event.color || "#3b82f6",
-      extendedProps: {
-        description: event.description,
-        source: "local",
-        location: event.location,
-        type: event.type,
-      },
-    })),
+    // Eventos locales (filtrados por tipo)
+    ...(calendarEvents || [])
+      .filter((event: any) => {
+        // Si no tiene tipo, mostrar siempre
+        if (!event.type) return true;
+        // Filtrar según el estado de los checkboxes
+        return eventTypeFilters[event.type as keyof typeof eventTypeFilters];
+      })
+      .map((event: any) => ({
+        id: String(event.id),
+        title: event.title || "Sin título",
+        start: event.startDate,
+        end: event.endDate,
+        allDay: event.allDay,
+        backgroundColor: event.color || "#3b82f6",
+        extendedProps: {
+          description: event.description,
+          source: "local",
+          location: event.location,
+          type: event.type,
+        },
+      })),
     // Eventos de Google Calendar (si está conectado)
     ...(googleEvents || []).map((event: any) => ({
       id: `google-${event.id}`,
@@ -540,6 +553,38 @@ export default function Calendar() {
             </Button>
           </div>
         </div>
+
+        {/* Filtros de tipo de evento */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-6 flex-wrap">
+              <span className="text-sm font-medium text-gray-700">Mostrar tipos:</span>
+              {Object.entries(EVENT_TYPE_LABELS).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={eventTypeFilters[key as keyof typeof eventTypeFilters]}
+                    onChange={(e) => setEventTypeFilters({
+                      ...eventTypeFilters,
+                      [key]: e.target.checked,
+                    })}
+                    className="w-4 h-4 rounded focus:ring-2"
+                    style={{
+                      accentColor: EVENT_TYPE_COLORS[key as keyof typeof EVENT_TYPE_COLORS],
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: EVENT_TYPE_COLORS[key as keyof typeof EVENT_TYPE_COLORS] }}
+                    />
+                    <span className="text-sm text-gray-700">{label}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {isGoogleConnected && (
           <Card>

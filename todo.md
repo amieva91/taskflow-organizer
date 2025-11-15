@@ -282,4 +282,7 @@
 - [x] Definir colores predefinidos para cada tipo (Personal, Profesional, Reunión, Recordatorio)
 - [x] Mostrar tipo de evento visualmente en el calendario
 - [x] Añadir campo de ubicación en formulario de eventos
-- [ ] Permitir filtrar eventos por tipo
+- [x] Permitir filtrar eventos por tipo
+  - [x] Añadir estado de filtros activos
+  - [x] Crear UI con checkboxes en barra superior
+  - [x] Aplicar filtros a eventos mostrados en calendario
