@@ -14,7 +14,7 @@ import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays } from "lucide-react";
+import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search } from "lucide-react";
 import esLocale from "@fullcalendar/core/locales/es";
 
 // Colores predefinidos para tipos de evento
@@ -59,6 +59,7 @@ export default function Calendar() {
     reminder: true,
   });
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -258,13 +259,18 @@ export default function Calendar() {
   const availableSlots = calculateAvailableSlots();
 
   const events = [
-    // Eventos locales (filtrados por tipo)
+    // Eventos locales (filtrados por tipo y búsqueda)
     ...(calendarEvents || [])
       .filter((event: any) => {
-        // Si no tiene tipo, mostrar siempre
-        if (!event.type) return true;
-        // Filtrar según el estado de los checkboxes
-        return eventTypeFilters[event.type as keyof typeof eventTypeFilters];
+        // Filtrar por tipo
+        const typeMatch = !event.type || eventTypeFilters[event.type as keyof typeof eventTypeFilters];
+        
+        // Filtrar por búsqueda (título o descripción)
+        const searchMatch = !searchQuery || 
+          event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.description?.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        return typeMatch && searchMatch;
       })
       .map((event: any) => ({
         id: String(event.id),
@@ -578,6 +584,21 @@ export default function Calendar() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-6 flex-wrap">
+              {/* Campo de búsqueda */}
+              <div className="flex items-center gap-2 flex-1 min-w-[250px]">
+                <Search className="h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Buscar eventos por título o descripción..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+              
+              {/* Separador vertical */}
+              <div className="h-6 w-px bg-gray-300" />
+              
               <span className="text-sm font-medium text-gray-700">Mostrar tipos:</span>
               {Object.entries(EVENT_TYPE_LABELS).map(([key, label]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer">
@@ -778,8 +799,15 @@ export default function Calendar() {
                       {calendarEvents && calendarEvents.length > 0 ? (
                         calendarEvents
                           .filter((event: any) => {
-                            if (!event.type) return true;
-                            return eventTypeFilters[event.type as keyof typeof eventTypeFilters];
+                            // Filtrar por tipo
+                            const typeMatch = !event.type || eventTypeFilters[event.type as keyof typeof eventTypeFilters];
+                            
+                            // Filtrar por búsqueda
+                            const searchMatch = !searchQuery || 
+                              event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              event.description?.toLowerCase().includes(searchQuery.toLowerCase());
+                            
+                            return typeMatch && searchMatch;
                           })
                           .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                           .map((event: any) => (

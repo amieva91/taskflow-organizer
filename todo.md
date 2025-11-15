@@ -293,3 +293,9 @@
 - [x] Aplicar filtros de tipo a vista de lista
 - [x] Añadir acciones rápidas (editar/eliminar) en cada fila
 - [x] Ordenar eventos por fecha (próximos primero)
+
+## Búsqueda de Eventos
+- [x] Añadir campo de búsqueda en barra de filtros
+- [x] Implementar filtrado por título en tiempo real
+- [x] Implementar filtrado por descripción en tiempo real
+- [x] Aplicar búsqueda tanto en vista calendario como en vista lista
