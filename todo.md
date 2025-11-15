@@ -368,3 +368,18 @@
 - [x] Implementar lógica para modificar solo instancia individual
 - [x] Añadir botón Cancelar para cerrar diálogo sin cambios
 - [x] Limpiar estados al confirmar o cancelar (pendingRecurrenceUpdate, draggedEvent)
+
+## Vista de Estadísticas del Calendario
+- [x] Crear endpoint backend para obtener estadísticas de eventos (calendarStats.ts)
+- [x] Calcular distribución de eventos por tipo (Personal/Profesional/Reunión/Recordatorio)
+- [x] Calcular eventos por mes para gráfico de tendencia (últimos 12 meses)
+- [x] Calcular horas totales programadas por semana (últimas 8 semanas)
+- [x] Crear página CalendarStats.tsx con layout y DashboardLayout
+- [x] Implementar gráfico de pie chart para distribución por tipo con Recharts
+- [x] Implementar gráfico de bar chart para eventos por mes con Recharts
+- [x] Implementar gráfico de bar chart para horas semanales
+- [x] Añadir tarjetas de métricas clave (total eventos, promedio diario, día más ocupado)
+- [x] Añadir botón de estadísticas en página Calendar
+- [x] Instalar librería Recharts para gráficos
+- [x] Añadir ruta /calendar/stats en App.tsx
+- [x] Manejar estado de carga y sin datos

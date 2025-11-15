@@ -15,7 +15,8 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
-import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search, Bell, BellOff } from "lucide-react";
+import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search, Bell, BellOff, BarChart3 } from "lucide-react";
+import { useLocation } from "wouter";
 import esLocale from "@fullcalendar/core/locales/es";
 import { downloadICalendar } from "@/lib/icalendar";
 
@@ -645,6 +646,15 @@ export default function Calendar() {
               >
                 <List className="h-4 w-4 mr-2" />
                 Lista
+              </Button>
+              <div className="h-6 w-px bg-border mx-2" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = "/calendar/stats"}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Estadísticas
               </Button>
             </div>
             {isGoogleConnected && (

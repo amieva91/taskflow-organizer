@@ -15,6 +15,7 @@ import * as workload from "./workload";
 import * as quickNotesModule from "./quickNotes";
 import * as calendarEventsModule from "./calendarEvents";
 import * as notificationSettingsModule from "./notificationSettings";
+import * as calendarStatsModule from "./calendarStats";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -948,6 +949,12 @@ export const appRouter = router({
           ...input,
         });
       }),
+  }),
+
+  calendarStats: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return await calendarStatsModule.getCalendarStats(ctx.user.id);
+    }),
   }),
 });
 
