@@ -383,3 +383,19 @@
 - [x] Instalar librería Recharts para gráficos
 - [x] Añadir ruta /calendar/stats en App.tsx
 - [x] Manejar estado de carga y sin datos
+
+## Importación desde Archivos .ics
+- [x] Crear parser de archivos .ics (módulo icsParser.ts)
+- [x] Parsear eventos con VEVENT, DTSTART, DTEND, SUMMARY, DESCRIPTION, LOCATION
+- [x] Parsear eventos recurrentes con RRULE
+- [x] Implementar detección de duplicados (comparar título + fecha + hora)
+- [x] Crear endpoint backend para importar eventos por lotes
+- [x] Añadir lógica de resolución de conflictos (saltar/sobrescribir/crear nuevo)
+- [x] Crear UI de importación con botón "Importar desde .ics"
+- [x] Implementar diálogo de preview con tabla de eventos a importar
+- [x] Añadir checkboxes para seleccionar eventos individualmente
+- [x] Mostrar indicador de conflicto (duplicado detectado) en preview
+- [x] Añadir selector de estrategia de conflicto por evento
+- [x] Implementar importación por lotes de eventos seleccionados
+- [x] Mostrar progreso durante importación (barra de progreso)
+- [x] Mostrar resumen final (X importados, Y saltados, Z errores)

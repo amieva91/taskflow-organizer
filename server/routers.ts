@@ -16,6 +16,7 @@ import * as quickNotesModule from "./quickNotes";
 import * as calendarEventsModule from "./calendarEvents";
 import * as notificationSettingsModule from "./notificationSettings";
 import * as calendarStatsModule from "./calendarStats";
+import * as calendarImportModule from "./calendarImport";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -955,6 +956,54 @@ export const appRouter = router({
     get: protectedProcedure.query(async ({ ctx }) => {
       return await calendarStatsModule.getCalendarStats(ctx.user.id);
     }),
+  }),
+
+  calendarImport: router({
+    checkDuplicate: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+        description: z.string().optional(),
+        location: z.string().optional(),
+        allDay: z.boolean(),
+        type: z.enum(["personal", "professional", "meeting", "reminder"]).optional(),
+        isRecurring: z.boolean().optional(),
+        recurrencePattern: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).optional(),
+        recurrenceEndDate: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await calendarImportModule.checkDuplicate(ctx.user.id, {
+          ...input,
+          startDate: new Date(input.startDate),
+          endDate: new Date(input.endDate),
+          recurrenceEndDate: input.recurrenceEndDate ? new Date(input.recurrenceEndDate) : undefined,
+        });
+      }),
+
+    importBatch: protectedProcedure
+      .input(z.array(z.object({
+        title: z.string(),
+        startDate: z.string(),
+        endDate: z.string(),
+        description: z.string().optional(),
+        location: z.string().optional(),
+        allDay: z.boolean(),
+        type: z.enum(["personal", "professional", "meeting", "reminder"]).optional(),
+        isRecurring: z.boolean().optional(),
+        recurrencePattern: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).optional(),
+        recurrenceEndDate: z.string().optional(),
+        conflictStrategy: z.enum(["skip", "overwrite", "create_new"]).optional(),
+      })))
+      .mutation(async ({ input, ctx }) => {
+        const events = input.map(e => ({
+          ...e,
+          startDate: new Date(e.startDate),
+          endDate: new Date(e.endDate),
+          recurrenceEndDate: e.recurrenceEndDate ? new Date(e.recurrenceEndDate) : undefined,
+        }));
+        return await calendarImportModule.importEventsBatch(ctx.user.id, events);
+      }),
   }),
 });
 

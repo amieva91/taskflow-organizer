@@ -15,10 +15,11 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
-import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search, Bell, BellOff, BarChart3 } from "lucide-react";
+import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search, Bell, BellOff, BarChart3, Upload } from "lucide-react";
 import { useLocation } from "wouter";
 import esLocale from "@fullcalendar/core/locales/es";
 import { downloadICalendar } from "@/lib/icalendar";
+import ImportCalendarDialog from "@/components/ImportCalendarDialog";
 
 // Colores predefinidos para tipos de evento
 const EVENT_TYPE_COLORS = {
@@ -80,6 +81,7 @@ export default function Calendar() {
     newStart: Date;
     newEnd: Date;
   } | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -676,6 +678,13 @@ export default function Calendar() {
                 )}
               </Button>
             )}
+            <Button 
+              variant="outline" 
+              onClick={() => setIsImportDialogOpen(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Importar .ics
+            </Button>
             <Button variant="outline" onClick={handleRefresh}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Actualizar
@@ -1609,6 +1618,16 @@ export default function Calendar() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Diálogo de importación de .ics */}
+        <ImportCalendarDialog
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+          onImportComplete={() => {
+            utils.calendarEvents.list.invalidate();
+            handleRefresh();
+          }}
+        />
       </div>
     </DashboardLayout>
   );
