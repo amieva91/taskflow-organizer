@@ -25,7 +25,7 @@ export async function getQuickNotesByDate(userId: number, date: Date) {
         lte(quickNotes.date, endOfDay)
       )
     )
-    .orderBy(quickNotes.createdAt);
+    .orderBy(quickNotes.sortOrder, quickNotes.createdAt);
 
   return notes;
 }
@@ -61,11 +61,33 @@ export async function createQuickNote(userId: number, content: string, date?: Da
 
   const noteDate = date || new Date();
   
+  // Obtener el máximo sortOrder actual para ese día
+  const startOfDay = new Date(noteDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(noteDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const existingNotes = await db
+    .select()
+    .from(quickNotes)
+    .where(
+      and(
+        eq(quickNotes.userId, userId),
+        gte(quickNotes.date, startOfDay),
+        lte(quickNotes.date, endOfDay)
+      )
+    );
+
+  const maxOrder = existingNotes.length > 0 
+    ? Math.max(...existingNotes.map(n => n.sortOrder || 0))
+    : 0;
+  
   await db.insert(quickNotes).values({
     userId,
     content,
     date: noteDate,
     isCompleted: 0,
+    sortOrder: maxOrder + 1,
   });
 
   return { success: true };
@@ -186,6 +208,27 @@ export async function updateQuickNoteContent(userId: number, noteId: number, con
     .update(quickNotes)
     .set({ content })
     .where(and(eq(quickNotes.id, noteId), eq(quickNotes.userId, userId)));
+
+  return { success: true };
+}
+
+/**
+ * Reordenar notas - actualizar sortOrder de múltiples notas
+ */
+export async function reorderQuickNotes(
+  userId: number,
+  noteOrders: Array<{ noteId: number; sortOrder: number }>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Actualizar cada nota con su nuevo sortOrder
+  for (const { noteId, sortOrder } of noteOrders) {
+    await db
+      .update(quickNotes)
+      .set({ sortOrder })
+      .where(and(eq(quickNotes.id, noteId), eq(quickNotes.userId, userId)));
+  }
 
   return { success: true };
 }

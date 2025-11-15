@@ -794,6 +794,17 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         return await quickNotesModule.updateQuickNoteContent(ctx.user.id, input.noteId, input.content);
       }),
+
+    reorder: protectedProcedure
+      .input(z.object({
+        noteOrders: z.array(z.object({
+          noteId: z.number(),
+          sortOrder: z.number(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await quickNotesModule.reorderQuickNotes(ctx.user.id, input.noteOrders);
+      }),
   }),
 });
 

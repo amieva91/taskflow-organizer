@@ -257,6 +257,11 @@
 - [ ] Añadir filtro para ver notas de días anteriores
 - [x] Persistir notas del día automáticamente al día siguiente si no se completan
 - [x] Añadir atajo de teclado (Ctrl+K o Cmd+K) para abrir captura rápida
-- [ ] Implementar drag and drop para reordenar prioridades en la lista
+- [x] Implementar drag and drop para reordenar prioridades en la lista
+  - [x] Añadir campo sortOrder a tabla quickNotes
+  - [x] Actualizar backend para gestionar orden de notas
+  - [x] Instalar librería @dnd-kit/core para drag-and-drop
+  - [x] Implementar drag-and-drop en componente QuickCapture
+  - [x] Actualizar orden al soltar nota en nueva posición
 - [ ] Añadir timestamps automáticos de creación
 - [ ] Notificación al final del día para revisar notas pendientes

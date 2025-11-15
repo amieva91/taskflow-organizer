@@ -314,6 +314,7 @@ export const quickNotes = mysqlTable("quickNotes", {
   content: text("content").notNull(),
   isCompleted: int("isCompleted").default(0).notNull(), // 0 = false, 1 = true
   date: timestamp("date").notNull(), // Fecha del día para el que es la nota
+  sortOrder: int("sortOrder").default(0).notNull(), // Orden de visualización (menor = más arriba)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
   convertedToTaskId: int("convertedToTaskId"), // Si se convirtió en tarea, referencia al ID
