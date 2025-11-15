@@ -148,3 +148,11 @@
 - [ ] Gestión de dependencias entre tareas
 
 - [x] Corregir error en Dashboard cuando no hay tokens de Google configurados
+
+## Página de Contactos
+- [x] Implementar lista de contactos con búsqueda y filtros
+- [x] Modal para crear y editar contactos (reales y ficticios)
+- [x] Gestión de departamentos
+- [x] Asignación de contactos a departamentos
+- [x] Vista de recursos por departamento
+- [ ] Integración con asignación de tareas
