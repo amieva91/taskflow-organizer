@@ -146,3 +146,5 @@
 - [ ] Asignación de recursos a tareas
 - [x] Seguimiento de progreso y porcentaje completado
 - [ ] Gestión de dependencias entre tareas
+
+- [x] Corregir error en Dashboard cuando no hay tokens de Google configurados

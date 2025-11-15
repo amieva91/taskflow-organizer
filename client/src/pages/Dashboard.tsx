@@ -30,13 +30,16 @@ export default function Dashboard() {
     endDate: todayEnd.toISOString(),
   });
 
-  // Fetch calendar events
-  const { data: calendarEvents, isLoading: eventsLoading } = trpc.calendar.list.useQuery({
+  // Check if Google is connected
+  const { data: googleStatus } = trpc.google.status.useQuery();
+  
+  // Fetch calendar events only if Google is connected
+  const { data: calendarEvents, isLoading: eventsLoading, error: calendarError } = trpc.calendar.list.useQuery({
     timeMin: todayStart.toISOString(),
     timeMax: weekEnd.toISOString(),
     maxResults: 10,
   }, {
-    enabled: true,
+    enabled: googleStatus?.isConnected === true,
     retry: false,
   });
 

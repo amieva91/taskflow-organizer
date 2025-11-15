@@ -25,6 +25,13 @@ export const appRouter = router({
   }),
 
   google: router({
+    status: protectedProcedure.query(async ({ ctx }) => {
+      const user = await db.getUserById(ctx.user.id);
+      return {
+        isConnected: !!(user?.googleAccessToken && user?.googleRefreshToken),
+      };
+    }),
+    
     getAuthUrl: protectedProcedure.query(() => {
       return { url: getAuthUrl() };
     }),
