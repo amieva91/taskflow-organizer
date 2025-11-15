@@ -201,3 +201,13 @@
 - [x] Actualizar startDate y dueDate al redimensionar
 - [x] Mostrar feedback visual durante el resize
 - [x] Confirmar cambios con toast
+
+## Página de Estadísticas y Reportes
+- [x] Crear página de Estadísticas con layout de gráficos
+- [x] Gráfico de tareas completadas por día/semana/mes
+- [x] Gráfico de distribución de tareas por prioridad
+- [x] Gráfico de distribución de tareas por estado
+- [x] Gráfico de tiempo dedicado por proyecto
+- [x] Tabla resumen con métricas clave
+- [x] Funcionalidad de exportar reporte a PDF
+- [x] Filtros por rango de fechas
