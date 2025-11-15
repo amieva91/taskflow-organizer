@@ -14,7 +14,7 @@ import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Plus } from "lucide-react";
+import { RefreshCw, Plus, Calendar as CalendarIcon } from "lucide-react";
 import esLocale from "@fullcalendar/core/locales/es";
 
 interface EventFormData {
@@ -41,11 +41,15 @@ export default function Calendar() {
     allDay: false,
   });
 
-  const { data: calendarEvents, isLoading } = trpc.calendar.list.useQuery({
+  const { data: user } = trpc.auth.me.useQuery();
+  const isGoogleConnected = !!user?.googleAccessToken;
+
+  const { data: calendarEvents, isLoading, error } = trpc.calendar.list.useQuery({
     timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     timeMax: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
     maxResults: 500,
   }, {
+    enabled: isGoogleConnected,
     retry: false,
   });
 
@@ -294,7 +298,22 @@ export default function Calendar() {
 
         <Card>
           <CardContent className="p-6">
-            {isLoading ? (
+            {!isGoogleConnected ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <CalendarIcon className="h-16 w-16 text-gray-300" />
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Conecta tu cuenta de Google
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Para sincronizar eventos de Google Calendar, conecta tu cuenta en Configuración
+                  </p>
+                  <Button onClick={() => window.location.href = "/settings"}>
+                    Ir a Configuración
+                  </Button>
+                </div>
+              </div>
+            ) : isLoading ? (
               <div className="flex justify-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               </div>

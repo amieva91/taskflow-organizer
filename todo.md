@@ -125,3 +125,6 @@
 - [x] Sincronización bidireccional con Google Calendar
 - [ ] Filtros por tipo de evento y colores
 - [x] Vista de agenda/lista de eventos
+
+## Bugs a Corregir
+- [x] Solucionar problema de carga infinita en el calendario
