@@ -33,6 +33,8 @@ export default function Calendar() {
   
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventFormData | null>(null);
+  const [showAvailableSlots, setShowAvailableSlots] = useState(false);
+  const [minSlotDuration, setMinSlotDuration] = useState(1); // Duración mínima en horas
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
@@ -102,6 +104,101 @@ export default function Calendar() {
     setSelectedEvent(null);
   };
 
+  // Función para calcular huecos disponibles
+  const calculateAvailableSlots = () => {
+    if (!showAvailableSlots || !calendarEvents) return [];
+
+    const now = new Date();
+    const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // Próximos 14 días
+    const slots: any[] = [];
+
+    // Obtener todos los eventos ocupados
+    const busyEvents = [
+      ...(calendarEvents || []).map((e: any) => ({
+        start: new Date(e.start?.dateTime || e.start?.date),
+        end: new Date(e.end?.dateTime || e.end?.date),
+      })),
+      ...(tasks || [])
+        .filter(t => t.dueDate)
+        .map(t => ({
+          start: new Date(t.startDate || t.dueDate!),
+          end: new Date(t.dueDate!),
+        })),
+    ].sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    // Generar slots de trabajo (9am-6pm, lunes-viernes)
+    let currentDate = new Date(now);
+    currentDate.setHours(9, 0, 0, 0);
+
+    while (currentDate < endDate) {
+      // Solo días laborables
+      if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+        const dayStart = new Date(currentDate);
+        dayStart.setHours(9, 0, 0, 0);
+        const dayEnd = new Date(currentDate);
+        dayEnd.setHours(18, 0, 0, 0);
+
+        let slotStart = new Date(dayStart);
+
+        // Buscar huecos en este día
+        for (const event of busyEvents) {
+          if (event.start > dayEnd || event.end < dayStart) continue;
+
+          const gapStart = slotStart;
+          const gapEnd = event.start < dayStart ? dayStart : event.start;
+
+          // Si hay un hueco suficientemente grande
+          const gapHours = (gapEnd.getTime() - gapStart.getTime()) / (1000 * 60 * 60);
+          if (gapHours >= minSlotDuration && gapStart < dayEnd) {
+            slots.push({
+              id: `slot-${slots.length}`,
+              title: `✅ Disponible (${gapHours.toFixed(1)}h)`,
+              start: gapStart.toISOString(),
+              end: gapEnd > dayEnd ? dayEnd.toISOString() : gapEnd.toISOString(),
+              backgroundColor: "#10b981",
+              borderColor: "#059669",
+              display: "background",
+              extendedProps: {
+                source: "available-slot",
+                duration: gapHours,
+              },
+            });
+          }
+
+          slotStart = new Date(Math.max(event.end.getTime(), slotStart.getTime()));
+        }
+
+        // Hueco final del día
+        if (slotStart < dayEnd) {
+          const gapHours = (dayEnd.getTime() - slotStart.getTime()) / (1000 * 60 * 60);
+          if (gapHours >= minSlotDuration) {
+            slots.push({
+              id: `slot-${slots.length}`,
+              title: `✅ Disponible (${gapHours.toFixed(1)}h)`,
+              start: slotStart.toISOString(),
+              end: dayEnd.toISOString(),
+              backgroundColor: "#10b981",
+              borderColor: "#059669",
+              display: "background",
+              extendedProps: {
+                source: "available-slot",
+                duration: gapHours,
+              },
+            });
+          }
+        }
+      }
+
+      // Siguiente día
+      currentDate.setDate(currentDate.getDate() + 1);
+      currentDate.setHours(9, 0, 0, 0);
+    }
+
+    return slots;
+  };
+
+  const availableSlots = calculateAvailableSlots();
+
   const events = [
     ...(calendarEvents || []).map((event: any) => ({
       id: event.id,
@@ -132,6 +229,7 @@ export default function Calendar() {
           taskId: task.id,
         },
       })),
+    ...availableSlots,
   ];
 
   const handleDateSelect = (selectInfo: any) => {
@@ -276,7 +374,7 @@ export default function Calendar() {
               Gestiona tus eventos y tareas en un solo lugar
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Button variant="outline" onClick={handleRefresh}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Actualizar
@@ -295,6 +393,54 @@ export default function Calendar() {
             </Button>
           </div>
         </div>
+
+        {isGoogleConnected && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="showSlots"
+                    checked={showAvailableSlots}
+                    onChange={(e) => setShowAvailableSlots(e.target.checked)}
+                    className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                  />
+                  <Label htmlFor="showSlots" className="cursor-pointer">
+                    Mostrar huecos disponibles
+                  </Label>
+                </div>
+                {showAvailableSlots && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="minDuration" className="text-sm text-gray-600">
+                      Duración mínima:
+                    </Label>
+                    <Select
+                      value={minSlotDuration.toString()}
+                      onValueChange={(value) => setMinSlotDuration(Number(value))}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0.5">30 min</SelectItem>
+                        <SelectItem value="1">1 hora</SelectItem>
+                        <SelectItem value="2">2 horas</SelectItem>
+                        <SelectItem value="3">3 horas</SelectItem>
+                        <SelectItem value="4">4 horas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {showAvailableSlots && availableSlots.length > 0 && (
+                  <div className="ml-auto text-sm text-green-600 font-medium">
+                    {availableSlots.length} huecos disponibles encontrados
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardContent className="p-6">

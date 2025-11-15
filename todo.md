@@ -180,3 +180,10 @@
 - [x] Añadir botón de sugerencias en modal de crear tarea
 - [x] Mostrar slots sugeridos con justificación de IA
 - [x] Permitir seleccionar un slot sugerido para autocompletar fechas
+
+## Filtro de Huecos Disponibles en Calendario
+- [x] Añadir toggle para activar/desactivar vista de huecos disponibles
+- [x] Crear función para calcular huecos entre eventos
+- [x] Mostrar huecos disponibles como eventos especiales en el calendario
+- [x] Añadir duración mínima configurable para filtrar huecos
+- [x] Colorear huecos disponibles con color distintivo
