@@ -221,3 +221,13 @@
 - [x] Configurar notificaciones push
 - [x] Añadir splash screens para iOS
 - [x] Registrar service worker en el cliente
+
+## Sistema de Recordatorios Automáticos
+- [x] Crear tabla de configuración de recordatorios en el esquema
+- [x] Implementar backend para gestionar recordatorios
+- [x] Crear job scheduler para verificar tareas/eventos próximos
+- [x] Implementar envío de notificaciones push
+- [x] Crear página de configuración de recordatorios
+- [x] Permitir configurar tiempo de anticipación (15min, 30min, 1h, 1día)
+- [x] Añadir opción de activar/desactivar recordatorios por tarea
+- [x] Solicitar permisos de notificaciones al usuario

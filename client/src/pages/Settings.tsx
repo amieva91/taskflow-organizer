@@ -1,10 +1,13 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, Link as LinkIcon, Loader2 } from "lucide-react";
+import { CheckCircle2, Link as LinkIcon, Loader2, Bell } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 
 export default function Settings() {
@@ -14,6 +17,41 @@ export default function Settings() {
 
   const { data: authUrl } = trpc.google.getAuthUrl.useQuery();
   const { data: user } = trpc.auth.me.useQuery();
+  const { data: reminderSettings } = trpc.reminders.getSettings.useQuery();
+
+  const [enabled, setEnabled] = useState(true);
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(true);
+  const [defaultMinutesBefore, setDefaultMinutesBefore] = useState("30");
+
+  // Sincronizar estado local con datos del servidor
+  useEffect(() => {
+    if (reminderSettings) {
+      setEnabled(reminderSettings.enabled);
+      setEmailEnabled(reminderSettings.emailEnabled);
+      setPushEnabled(reminderSettings.pushEnabled);
+      setDefaultMinutesBefore(reminderSettings.defaultMinutesBefore.toString());
+    }
+  }, [reminderSettings]);
+
+  const updateRemindersMutation = trpc.reminders.updateSettings.useMutation({
+    onSuccess: () => {
+      toast.success("Configuración de recordatorios actualizada");
+      utils.reminders.getSettings.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Error al actualizar configuración: " + error.message);
+    },
+  });
+
+  const handleSaveReminders = () => {
+    updateRemindersMutation.mutate({
+      enabled,
+      emailEnabled,
+      pushEnabled,
+      defaultMinutesBefore: parseInt(defaultMinutesBefore),
+    });
+  };
 
   const handleCallbackMutation = trpc.google.handleCallback.useMutation({
     onSuccess: () => {
@@ -40,6 +78,20 @@ export default function Settings() {
   const handleConnectGoogle = () => {
     if (authUrl?.url) {
       window.location.href = authUrl.url;
+    }
+  };
+
+  // Solicitar permisos de notificaciones
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        toast.success("Permisos de notificaciones concedidos");
+      } else {
+        toast.error("Permisos de notificaciones denegados");
+      }
+    } else {
+      toast.error("Este navegador no soporta notificaciones");
     }
   };
 
@@ -99,46 +151,115 @@ export default function Settings() {
                   </Button>
                 )}
               </div>
-
-              {isGoogleConnected && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h4 className="font-medium text-green-900 mb-2">
-                    Funcionalidades Disponibles
-                  </h4>
-                  <ul className="space-y-1 text-sm text-green-700">
-                    <li>✓ Sincronización bidireccional con Google Calendar</li>
-                    <li>✓ Visualización de eventos en el calendario</li>
-                    <li>✓ Creación y edición de eventos</li>
-                    <li>✓ Envío de correos desde Gmail</li>
-                    <li>✓ Notificaciones de eventos</li>
-                  </ul>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Información de la Cuenta</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Bell className="h-5 w-5 text-blue-600" />
+              <CardTitle>Recordatorios Automáticos</CardTitle>
+            </div>
             <CardDescription>
-              Detalles de tu cuenta en TaskFlow Organizer
+              Configura cuándo y cómo recibir recordatorios de tus tareas y eventos
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-sm text-gray-600">Nombre</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {user?.name || "No disponible"}
-                </span>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="enabled">Activar recordatorios</Label>
+                  <p className="text-sm text-gray-500">
+                    Recibe notificaciones antes de tus tareas y eventos
+                  </p>
+                </div>
+                <Switch
+                  id="enabled"
+                  checked={enabled}
+                  onCheckedChange={setEnabled}
+                />
               </div>
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-sm text-gray-600">Email</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {user?.email || "No disponible"}
-                </span>
-              </div>
+
+              {enabled && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="minutesBefore">Tiempo de anticipación</Label>
+                    <Select value={defaultMinutesBefore} onValueChange={setDefaultMinutesBefore}>
+                      <SelectTrigger id="minutesBefore">
+                        <SelectValue placeholder="Selecciona tiempo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 minutos antes</SelectItem>
+                        <SelectItem value="30">30 minutos antes</SelectItem>
+                        <SelectItem value="60">1 hora antes</SelectItem>
+                        <SelectItem value="120">2 horas antes</SelectItem>
+                        <SelectItem value="1440">1 día antes</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500">
+                      Cuánto tiempo antes de la tarea quieres recibir el recordatorio
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="emailEnabled">Notificaciones por email</Label>
+                        <p className="text-sm text-gray-500">
+                          Enviar recordatorios a tu correo electrónico
+                        </p>
+                      </div>
+                      <Switch
+                        id="emailEnabled"
+                        checked={emailEnabled}
+                        onCheckedChange={setEmailEnabled}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="pushEnabled">Notificaciones push</Label>
+                        <p className="text-sm text-gray-500">
+                          Mostrar notificaciones en el navegador
+                        </p>
+                      </div>
+                      <Switch
+                        id="pushEnabled"
+                        checked={pushEnabled}
+                        onCheckedChange={setPushEnabled}
+                      />
+                    </div>
+
+                    {pushEnabled && "Notification" in window && Notification.permission !== "granted" && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-sm text-yellow-800 mb-2">
+                          Necesitas conceder permisos para recibir notificaciones push
+                        </p>
+                        <Button size="sm" variant="outline" onClick={requestNotificationPermission}>
+                          Solicitar permisos
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button 
+                      onClick={handleSaveReminders}
+                      disabled={updateRemindersMutation.isPending}
+                    >
+                      {updateRemindersMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        "Guardar configuración"
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>

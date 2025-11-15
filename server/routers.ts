@@ -10,6 +10,7 @@ import * as googleCalendar from "./googleCalendar";
 import * as googleGmail from "./googleGmail";
 import * as emailNotifications from "./emailNotifications";
 import * as aiSuggestions from "./aiSuggestions";
+import * as reminders from "./reminders";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -656,6 +657,31 @@ export const appRouter = router({
         );
         return suggestions;
       }),
+  }),
+
+  reminders: router({
+    getSettings: protectedProcedure.query(async ({ ctx }) => {
+      return await reminders.getReminderSettings(ctx.user.id);
+    }),
+
+    updateSettings: protectedProcedure
+      .input(z.object({
+        enabled: z.boolean().optional(),
+        defaultMinutesBefore: z.number().optional(),
+        emailEnabled: z.boolean().optional(),
+        pushEnabled: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return await reminders.upsertReminderSettings(ctx.user.id, input);
+      }),
+
+    getUpcoming: protectedProcedure.query(async ({ ctx }) => {
+      return await reminders.getTasksNeedingReminder(ctx.user.id);
+    }),
+
+    sendPending: protectedProcedure.mutation(async ({ ctx }) => {
+      return await reminders.sendPendingReminders(ctx.user.id);
+    }),
   }),
 });
 

@@ -272,3 +272,34 @@ export const notifications = mysqlTable("notifications", {
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+/**
+ * Configuración de recordatorios del usuario
+ */
+export const reminderSettings = mysqlTable("reminderSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  enabled: boolean("enabled").default(true).notNull(),
+  defaultMinutesBefore: int("defaultMinutesBefore").default(30).notNull(), // 30 minutos por defecto
+  emailEnabled: boolean("emailEnabled").default(true).notNull(),
+  pushEnabled: boolean("pushEnabled").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReminderSetting = typeof reminderSettings.$inferSelect;
+export type InsertReminderSetting = typeof reminderSettings.$inferInsert;
+
+/**
+ * Recordatorios enviados (para no duplicar)
+ */
+export const sentReminders = mysqlTable("sentReminders", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  taskId: int("taskId"),
+  eventId: varchar("eventId", { length: 255 }), // ID de evento de Google Calendar
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  type: mysqlEnum("type", ["push", "email"]).notNull(),
+});
+
+export type SentReminder = typeof sentReminders.$inferSelect;
+export type InsertSentReminder = typeof sentReminders.$inferInsert;
