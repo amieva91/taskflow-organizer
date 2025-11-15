@@ -114,6 +114,19 @@ export default function Calendar() {
     },
   });
 
+  const syncMutation = trpc.calendarEvents.syncFromGoogle.useMutation({
+    onSuccess: (result) => {
+      toast.success(`✅ ${result.syncedCount} eventos sincronizados desde Google Calendar`);
+      if (result.skippedCount > 0) {
+        toast.info(`⚠️ ${result.skippedCount} eventos omitidos`);
+      }
+      utils.calendarEvents.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error("Error al sincronizar: " + error.message);
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       title: "",
@@ -437,6 +450,14 @@ export default function Calendar() {
     }
   };
 
+  const handleSyncFromGoogle = () => {
+    syncMutation.mutate({
+      timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      timeMax: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      maxResults: 500,
+    });
+  };
+
   const handleRefresh = () => {
     utils.calendarEvents.list.invalidate();
     if (isGoogleConnected) {
@@ -457,6 +478,25 @@ export default function Calendar() {
             </p>
           </div>
           <div className="flex gap-2 items-center">
+            {isGoogleConnected && (
+              <Button 
+                variant="outline" 
+                onClick={handleSyncFromGoogle}
+                disabled={syncMutation.isPending}
+              >
+                {syncMutation.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Sincronizar con Google
+                  </>
+                )}
+              </Button>
+            )}
             <Button variant="outline" onClick={handleRefresh}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Actualizar

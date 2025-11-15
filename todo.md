@@ -271,8 +271,8 @@
 - [x] Crear tabla de eventos locales en la base de datos
 - [x] Implementar CRUD de eventos locales sin dependencia de Google
 - [x] Modificar página de Calendario para usar eventos locales por defecto
-- [ ] Añadir botón de "Sincronizar con Google Calendar" opcional
-- [ ] Implementar sincronización bidireccional manual (importar eventos de Google)
+- [x] Añadir botón de "Sincronizar con Google Calendar" opcional
+- [x] Implementar sincronización bidireccional manual (importar eventos de Google)
 - [ ] Permitir exportar eventos locales a Google Calendar
 - [ ] Añadir indicador visual de eventos sincronizados vs locales
 - [ ] Mantener compatibilidad con flujo actual para usuarios que ya usan Google

@@ -888,6 +888,43 @@ export const appRouter = router({
     getUnsynced: protectedProcedure.query(async ({ ctx }) => {
       return await calendarEventsModule.getUnsyncedEvents(ctx.user.id);
     }),
+
+    syncFromGoogle: protectedProcedure
+      .input(z.object({
+        timeMin: z.string().optional(),
+        timeMax: z.string().optional(),
+        maxResults: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        const timeMin = input.timeMin ? new Date(input.timeMin) : undefined;
+        const timeMax = input.timeMax ? new Date(input.timeMax) : undefined;
+
+        // Obtener eventos de Google Calendar
+        const googleEvents = await googleCalendar.listCalendarEvents(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          timeMin,
+          timeMax,
+          input.maxResults
+        );
+
+        // Sincronizar a base de datos local
+        const result = await calendarEventsModule.syncFromGoogleCalendar(
+          ctx.user.id,
+          googleEvents
+        );
+
+        return result;
+      }),
   }),
 });
 

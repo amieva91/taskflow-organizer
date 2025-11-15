@@ -171,3 +171,89 @@ export async function getUnsyncedEvents(userId: number) {
 
   return events;
 }
+
+/**
+ * Sincronizar eventos de Google Calendar a la base de datos local
+ * Importa eventos de Google y los guarda como eventos locales marcados como sincronizados
+ */
+export async function syncFromGoogleCalendar(
+  userId: number,
+  googleEvents: Array<any> // Schema$Event from Google Calendar API
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  let syncedCount = 0;
+  let skippedCount = 0;
+
+  for (const gEvent of googleEvents) {
+    try {
+      // Validar que el evento tenga ID
+      if (!gEvent.id) {
+        skippedCount++;
+        continue;
+      }
+
+      // Verificar si ya existe un evento con este googleEventId
+      const existing = await db
+        .select()
+        .from(calendarEvents)
+        .where(
+          and(
+            eq(calendarEvents.userId, userId),
+            eq(calendarEvents.googleEventId, gEvent.id)
+          )
+        )
+        .limit(1);
+
+      const startDate = gEvent.start?.dateTime || gEvent.start?.date;
+      const endDate = gEvent.end?.dateTime || gEvent.end?.date;
+
+      if (!startDate || !endDate) {
+        skippedCount++;
+        continue;
+      }
+
+      const eventData = {
+        userId,
+        title: gEvent.summary || "Sin título",
+        description: gEvent.description || "",
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        allDay: !gEvent.start?.dateTime,
+        location: gEvent.location,
+        color: "#8b5cf6", // Color morado para eventos de Google
+        type: "professional" as const,
+        googleEventId: gEvent.id,
+        isSynced: true,
+        lastSyncedAt: new Date(),
+      };
+
+      if (existing.length > 0) {
+        // Actualizar evento existente
+        await db
+          .update(calendarEvents)
+          .set({
+            ...eventData,
+            updatedAt: new Date(),
+          })
+          .where(eq(calendarEvents.id, existing[0].id));
+      } else {
+        // Crear nuevo evento
+        await db.insert(calendarEvents).values(eventData);
+      }
+
+      syncedCount++;
+    } catch (error) {
+      console.error(`Error syncing event ${gEvent.id}:`, error);
+      skippedCount++;
+    }
+  }
+
+  return {
+    success: true,
+    syncedCount,
+    skippedCount,
+    totalProcessed: googleEvents.length,
+  };
+}
