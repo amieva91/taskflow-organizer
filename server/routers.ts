@@ -1,7 +1,14 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
+import * as db from "./db";
+import { getAuthUrl, getTokensFromCode } from "./googleAuth";
+import * as googleCalendar from "./googleCalendar";
+import * as googleGmail from "./googleGmail";
+import { storagePut } from "./storage";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -17,12 +24,560 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  google: router({
+    getAuthUrl: protectedProcedure.query(() => {
+      return { url: getAuthUrl() };
+    }),
+    
+    handleCallback: protectedProcedure
+      .input(z.object({ code: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const tokens = await getTokensFromCode(input.code);
+        
+        if (!tokens.access_token) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'No se pudo obtener el token de acceso',
+          });
+        }
+
+        const expiry = tokens.expiry_date ? new Date(tokens.expiry_date) : undefined;
+        
+        await db.updateUserGoogleTokens(
+          ctx.user.id,
+          tokens.access_token,
+          tokens.refresh_token || undefined,
+          expiry
+        );
+
+        return { success: true };
+      }),
+  }),
+
+  calendar: router({
+    list: protectedProcedure
+      .input(z.object({
+        timeMin: z.string().optional(),
+        timeMax: z.string().optional(),
+        maxResults: z.number().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        const timeMin = input.timeMin ? new Date(input.timeMin) : undefined;
+        const timeMax = input.timeMax ? new Date(input.timeMax) : undefined;
+
+        const events = await googleCalendar.listCalendarEvents(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          timeMin,
+          timeMax,
+          input.maxResults
+        );
+
+        return events;
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        summary: z.string(),
+        description: z.string().optional(),
+        start: z.object({
+          dateTime: z.string().optional(),
+          date: z.string().optional(),
+          timeZone: z.string().optional(),
+        }),
+        end: z.object({
+          dateTime: z.string().optional(),
+          date: z.string().optional(),
+          timeZone: z.string().optional(),
+        }),
+        attendees: z.array(z.object({
+          email: z.string(),
+          displayName: z.string().optional(),
+        })).optional(),
+        colorId: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        const event = await googleCalendar.createCalendarEvent(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          input
+        );
+
+        return event;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        eventId: z.string(),
+        summary: z.string().optional(),
+        description: z.string().optional(),
+        start: z.object({
+          dateTime: z.string().optional(),
+          date: z.string().optional(),
+          timeZone: z.string().optional(),
+        }).optional(),
+        end: z.object({
+          dateTime: z.string().optional(),
+          date: z.string().optional(),
+          timeZone: z.string().optional(),
+        }).optional(),
+        attendees: z.array(z.object({
+          email: z.string(),
+          displayName: z.string().optional(),
+        })).optional(),
+        colorId: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        const { eventId, ...updateData } = input;
+        const event = await googleCalendar.updateCalendarEvent(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          eventId,
+          updateData
+        );
+
+        return event;
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ eventId: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        await googleCalendar.deleteCalendarEvent(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          input.eventId
+        );
+
+        return { success: true };
+      }),
+
+    import: protectedProcedure
+      .input(z.object({
+        timeMin: z.string().optional(),
+        timeMax: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        const timeMin = input.timeMin ? new Date(input.timeMin) : undefined;
+        const timeMax = input.timeMax ? new Date(input.timeMax) : undefined;
+
+        const events = await googleCalendar.importExistingEvents(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          timeMin,
+          timeMax
+        );
+
+        return { events, count: events.length };
+      }),
+  }),
+
+  gmail: router({
+    send: protectedProcedure
+      .input(z.object({
+        to: z.array(z.string().email()),
+        cc: z.array(z.string().email()).optional(),
+        bcc: z.array(z.string().email()).optional(),
+        subject: z.string(),
+        body: z.string(),
+        isHtml: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        const result = await googleGmail.sendEmail(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          input
+        );
+
+        return result;
+      }),
+
+    list: protectedProcedure
+      .input(z.object({
+        maxResults: z.number().optional(),
+        query: z.string().optional(),
+      }))
+      .query(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        
+        if (!user?.googleAccessToken || !user?.googleRefreshToken) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Debes conectar tu cuenta de Google primero',
+          });
+        }
+
+        const messages = await googleGmail.listEmails(
+          user.googleAccessToken,
+          user.googleRefreshToken,
+          input.maxResults,
+          input.query
+        );
+
+        return messages;
+      }),
+  }),
+
+  tasks: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getTasksByUserId(ctx.user.id);
+    }),
+
+    byId: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getTaskById(input.id);
+      }),
+
+    byProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getTasksByProjectId(input.projectId);
+      }),
+
+    byDateRange: protectedProcedure
+      .input(z.object({
+        startDate: z.string(),
+        endDate: z.string(),
+      }))
+      .query(async ({ input, ctx }) => {
+        return await db.getTasksByDateRange(
+          ctx.user.id,
+          new Date(input.startDate),
+          new Date(input.endDate)
+        );
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        projectId: z.number().optional(),
+        phaseId: z.number().optional(),
+        status: z.enum(["todo", "in_progress", "completed", "blocked"]).optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+        startDate: z.string().optional(),
+        dueDate: z.string().optional(),
+        estimatedHours: z.number().optional(),
+        type: z.enum(["personal", "professional", "meeting", "event", "class", "training"]).optional(),
+        color: z.string().optional(),
+        googleCalendarEventId: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createTask({
+          ...input,
+          userId: ctx.user.id,
+          startDate: input.startDate ? new Date(input.startDate) : undefined,
+          dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
+        });
+        return result;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        status: z.enum(["todo", "in_progress", "completed", "blocked"]).optional(),
+        priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+        startDate: z.string().optional(),
+        dueDate: z.string().optional(),
+        completedDate: z.string().optional(),
+        estimatedHours: z.number().optional(),
+        actualHours: z.number().optional(),
+        color: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateTask(id, {
+          ...data,
+          startDate: data.startDate ? new Date(data.startDate) : undefined,
+          dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+          completedDate: data.completedDate ? new Date(data.completedDate) : undefined,
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteTask(input.id);
+        return { success: true };
+      }),
+  }),
+
+  projects: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getProjectsByUserId(ctx.user.id);
+    }),
+
+    byId: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getProjectById(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        status: z.enum(["planning", "active", "on_hold", "completed", "cancelled"]).optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        color: z.string().optional(),
+        type: z.enum(["personal", "professional"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createProject({
+          ...input,
+          userId: ctx.user.id,
+          startDate: input.startDate ? new Date(input.startDate) : undefined,
+          endDate: input.endDate ? new Date(input.endDate) : undefined,
+        });
+        return result;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        status: z.enum(["planning", "active", "on_hold", "completed", "cancelled"]).optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        color: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateProject(id, {
+          ...data,
+          startDate: data.startDate ? new Date(data.startDate) : undefined,
+          endDate: data.endDate ? new Date(data.endDate) : undefined,
+        });
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProject(input.id);
+        return { success: true };
+      }),
+  }),
+
+  contacts: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getContactsByUserId(ctx.user.id);
+    }),
+
+    byId: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContactById(input.id);
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        departmentId: z.number().optional(),
+        isFictional: z.boolean().optional(),
+        avatar: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createContact({
+          ...input,
+          userId: ctx.user.id,
+        });
+        return result;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        departmentId: z.number().optional(),
+        avatar: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateContact(id, data);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteContact(input.id);
+        return { success: true };
+      }),
+  }),
+
+  departments: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getDepartmentsByUserId(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        color: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.createDepartment({
+          ...input,
+          userId: ctx.user.id,
+        });
+        return result;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        color: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateDepartment(id, data);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteDepartment(input.id);
+        return { success: true };
+      }),
+  }),
+
+  notifications: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getNotificationsByUserId(ctx.user.id);
+    }),
+
+    markAsRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.markNotificationAsRead(input.id);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteNotification(input.id);
+        return { success: true };
+      }),
+  }),
+
+  attachments: router({
+    upload: protectedProcedure
+      .input(z.object({
+        fileName: z.string(),
+        fileData: z.string(),
+        mimeType: z.string(),
+        taskId: z.number().optional(),
+        projectId: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const buffer = Buffer.from(input.fileData, 'base64');
+        const fileKey = `${ctx.user.id}/attachments/${Date.now()}-${input.fileName}`;
+        
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+        const result = await db.createAttachment({
+          fileName: input.fileName,
+          fileUrl: url,
+          fileKey,
+          mimeType: input.mimeType,
+          fileSize: buffer.length,
+          taskId: input.taskId,
+          projectId: input.projectId,
+        });
+
+        return result;
+      }),
+
+    byTask: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAttachmentsByTaskId(input.taskId);
+      }),
+
+    byProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAttachmentsByProjectId(input.projectId);
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteAttachment(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
