@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, title, startDate, endDate, userId, isRecurring FROM calendarEvents LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user TkLU5v1xwUmz92N.root --database StcafVC4fAUsNvUFG884EC --execute SELECT id, title, startDate, endDate, userId, isRecurring FROM calendarEvents LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "title": "hkjhkj",
+      "startDate": "2025-11-15 18:00:57",
+      "endDate": "2025-11-15 19:00:57",
+      "userId": "1",
+      "isRecurring": "0"
+    },
+    {
+      "id": "30001",
+      "title": "jlkjlkj",
+      "startDate": "2025-11-15 18:13:29",
+      "endDate": "2025-11-15 19:13:29",
+      "userId": "1",
+      "isRecurring": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tstartDate\tendDate\tuserId\tisRecurring\n1\thkjhkj\t2025-11-15 18:00:57\t2025-11-15 19:00:57\t1\t0\n30001\tjlkjlkj\t2025-11-15 18:13:29\t2025-11-15 19:13:29\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 75
+}

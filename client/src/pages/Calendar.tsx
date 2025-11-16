@@ -12,7 +12,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
 import { RefreshCw, Plus, Calendar as CalendarIcon, List, CalendarDays, Search, Bell, BellOff, BarChart3, Upload } from "lucide-react";
@@ -96,16 +96,19 @@ export default function Calendar() {
   const { data: user } = trpc.auth.me.useQuery();
   const isGoogleConnected = !!user?.googleAccessToken;
 
-  // Usar eventos locales por defecto
-  const { data: localEvents, isLoading, error } = trpc.calendarEvents.list.useQuery({
+  // Estabilizar fechas para evitar re-fetches infinitos
+  const dateRange = useMemo(() => ({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-  });
+  }), []);
+
+  // Usar eventos locales por defecto
+  const { data: localEvents, isLoading, error } = trpc.calendarEvents.list.useQuery(dateRange);
 
   // Eventos de Google Calendar (opcional, solo si está conectado)
   const { data: googleEvents } = trpc.calendar.list.useQuery({
-    timeMin: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    timeMax: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+    timeMin: dateRange.startDate,
+    timeMax: dateRange.endDate,
     maxResults: 500,
   }, {
     enabled: isGoogleConnected,
@@ -295,9 +298,13 @@ export default function Calendar() {
     return slots;
   };
 
-  const availableSlots = calculateAvailableSlots();
+  const availableSlots = useMemo(() => calculateAvailableSlots(), [
+    showAvailableSlots,
+    calendarEvents,
+    minSlotDuration,
+  ]);
 
-  const events = [
+  const events = useMemo(() => [
     // Eventos locales (filtrados por tipo y búsqueda)
     ...(calendarEvents || [])
       .filter((event: any) => {
@@ -360,7 +367,14 @@ export default function Calendar() {
         },
       })),
     ...availableSlots,
-  ];
+  ], [
+    calendarEvents,
+    googleEvents,
+    tasks,
+    eventTypeFilters,
+    searchQuery,
+    availableSlots,
+  ]);
 
   const handleDateSelect = (selectInfo: any) => {
     const calendarApi = selectInfo.view.calendar;

@@ -11,43 +11,48 @@ export async function getCalendarEvents(userId: number, startDate: Date, endDate
   const db = await getDb();
   if (!db) return [];
 
-  // Obtener eventos que:
-  // 1. Estén en el rango de fechas (eventos normales)
-  // 2. Sean recurrentes y su fecha de inicio sea antes del fin del rango
-  const events = await db
-    .select()
-    .from(calendarEvents)
-    .where(
-      and(
-        eq(calendarEvents.userId, userId),
-        // Solo eventos padre (no instancias generadas)
-        isNull(calendarEvents.recurrenceParentId),
-        or(
-          // Eventos normales en el rango
-          and(
-            gte(calendarEvents.startDate, startDate),
-            lte(calendarEvents.endDate, endDate)
-          ),
-          // Eventos recurrentes que podrían tener instancias en el rango
-          and(
-            eq(calendarEvents.isRecurring, true),
-            lte(calendarEvents.startDate, endDate),
-            or(
-              isNull(calendarEvents.recurrenceEndDate),
-              gte(calendarEvents.recurrenceEndDate, startDate)
+  try {
+    // Obtener eventos que:
+    // 1. Estén en el rango de fechas (eventos normales)
+    // 2. Sean recurrentes y su fecha de inicio sea antes del fin del rango
+    const events = await db
+      .select()
+      .from(calendarEvents)
+      .where(
+        and(
+          eq(calendarEvents.userId, userId),
+          // Solo eventos padre (no instancias generadas)
+          isNull(calendarEvents.recurrenceParentId),
+          or(
+            // Eventos normales en el rango
+            and(
+              gte(calendarEvents.startDate, startDate),
+              lte(calendarEvents.endDate, endDate)
+            ),
+            // Eventos recurrentes que podrían tener instancias en el rango
+            and(
+              eq(calendarEvents.isRecurring, true),
+              lte(calendarEvents.startDate, endDate),
+              or(
+                isNull(calendarEvents.recurrenceEndDate),
+                gte(calendarEvents.recurrenceEndDate, startDate)
+              )
             )
           )
         )
       )
-    )
-    .orderBy(calendarEvents.startDate);
+      .orderBy(calendarEvents.startDate);
 
-  // Expandir eventos recurrentes
-  const expandedEvents = events.flatMap(event => 
-    expandRecurringEvent(event, startDate, endDate)
-  );
+    // Expandir eventos recurrentes
+    const expandedEvents = events.flatMap(event => 
+      expandRecurringEvent(event, startDate, endDate)
+    );
 
-  return expandedEvents;
+    return expandedEvents;
+  } catch (error) {
+    console.error('[getCalendarEvents] Error:', error);
+    return [];
+  }
 }
 
 /**

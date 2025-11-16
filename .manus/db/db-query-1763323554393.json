@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, title, startDate, isRecurring, recurrencePattern, recurrenceEndDate FROM calendarEvents WHERE isRecurring = 1 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user TkLU5v1xwUmz92N.root --database StcafVC4fAUsNvUFG884EC --execute SELECT id, title, startDate, isRecurring, recurrencePattern, recurrenceEndDate FROM calendarEvents WHERE isRecurring = 1 LIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 730
+}

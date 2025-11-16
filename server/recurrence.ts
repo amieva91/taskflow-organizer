@@ -35,9 +35,13 @@ export function generateRecurringInstances(
   }
 
   // Determinar la fecha de fin de la recurrencia
+  // Si no hay fecha de fin, limitar a 1 año desde el inicio para evitar bucles infinitos
+  const maxEnd = new Date(config.startDate);
+  maxEnd.setFullYear(maxEnd.getFullYear() + 1);
+  
   const recurrenceEnd = config.recurrenceEndDate 
     ? new Date(Math.min(config.recurrenceEndDate.getTime(), rangeEnd.getTime()))
-    : rangeEnd;
+    : new Date(Math.min(rangeEnd.getTime(), maxEnd.getTime()));
 
   let currentDate = new Date(config.startDate);
   const eventDuration = config.endDate.getTime() - config.startDate.getTime();
@@ -53,8 +57,8 @@ export function generateRecurringInstances(
     currentDate = getNextOccurrence(currentDate, config.recurrencePattern);
 
     // Protección contra bucles infinitos
-    if (instances.length > 1000) {
-      console.warn('[Recurrence] Generated more than 1000 instances, stopping');
+    if (instances.length > 100) {
+      console.warn('[Recurrence] Generated more than 100 instances, stopping');
       break;
     }
   }

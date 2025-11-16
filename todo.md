@@ -399,3 +399,8 @@
 - [x] Implementar importación por lotes de eventos seleccionados
 - [x] Mostrar progreso durante importación (barra de progreso)
 - [x] Mostrar resumen final (X importados, Y saltados, Z errores)
+
+## Bug: Carga Infinita en Calendario
+- [x] Diagnosticar causa del spinner de carga que no termina (fechas inestables en query causaban re-fetches infinitos)
+- [x] Corregir lógica que causa el bloqueo (usar useMemo para estabilizar dateRange)
+- [x] Verificar que el calendario carga correctamente
